@@ -26,6 +26,7 @@ import {
   loadScenario,
   updateScenario,
   type ScenarioPayload,
+  hasApi,
 } from "@/lib/storage/apiScenarios";
 import {
   deleteScenario as deleteScenarioLocal,
@@ -61,8 +62,8 @@ type FormState = RentTimelineInputs & {
 
 const defaultState: FormState = {
   purchasePrice: 325_000,
-  arv: 360_000,
-  asIsValue: 325_000,
+  arv: undefined as unknown as number,
+  asIsValue: undefined,
   targetMonthlyRent: 2750,
   annualAppreciationPercent: 3,
   monthsToSimulate: 12,
@@ -83,12 +84,12 @@ const defaultState: FormState = {
   },
   operating: {
     taxesAnnual: 4800,
-    insuranceAnnual: 1200,
+    insuranceAnnual: 900,
     repairsPercent: 5,
     capexPercent: 5,
-    managementPercent: 8,
-    vacancyPercent: 5,
-    otherMonthlyExpenses: 150,
+    managementPercent: 10,
+    vacancyPercent: 3,
+    otherMonthlyExpenses: 0,
     utilitiesMonthly: 0,
   },
   strategy: Strategy.BUY_HOLD,
@@ -199,6 +200,9 @@ function AnalyzeContent() {
     }));
   };
 
+  const asIsFallback = form.asIsValue ?? form.purchasePrice;
+  const arvFallback = form.arv ?? form.purchasePrice;
+
   const buyHoldResult = useMemo(() => {
     return calculateBuyHold({
       rent: {
@@ -210,17 +214,17 @@ function AnalyzeContent() {
       rehabPlanned: form.strategy === Strategy.FLIP ? true : form.rehabPlanned,
         rehabTiming: form.rehabTiming,
         rehabLengthMonths: form.rehabLengthMonths,
-        asIsValue: form.asIsValue,
+        asIsValue: asIsFallback,
       },
       loan: { ...form.loan, purchasePrice: form.purchasePrice },
       operating: form.operating,
-      arv: form.arv,
+      arv: arvFallback,
       purchasePrice: form.purchasePrice,
       annualAppreciationPercent: form.annualAppreciationPercent,
       months: form.monthsToSimulate,
       rehabTotal: form.includeRehabInCashRequired ? rehabResult.total : 0,
     });
-  }, [form, rehabResult.total]);
+  }, [form, rehabResult.total, asIsFallback, arvFallback]);
 
   const brrrResult = useMemo(() => {
     return calculateBRRRR({
@@ -230,10 +234,10 @@ function AnalyzeContent() {
         currentMonthlyRent: form.currentMonthlyRent,
         monthsUntilTenantLeaves: form.monthsUntilTenantLeaves,
         targetMonthlyRent: form.targetMonthlyRent,
-      rehabPlanned: form.strategy === Strategy.FLIP ? true : form.rehabPlanned,
+        rehabPlanned: form.strategy === Strategy.FLIP ? true : form.rehabPlanned,
         rehabTiming: form.rehabTiming,
         rehabLengthMonths: form.rehabLengthMonths,
-        asIsValue: form.asIsValue,
+        asIsValue: asIsFallback,
       },
       operating: form.operating,
       longTermLoan: { ...form.loan, purchasePrice: form.purchasePrice },
@@ -246,12 +250,12 @@ function AnalyzeContent() {
       },
       refinanceLtvPercent: form.refinanceLtvPercent,
       purchasePrice: form.purchasePrice,
-      arv: form.arv,
+      arv: arvFallback,
       rehabTotal: rehabResult.total,
       annualAppreciationPercent: form.annualAppreciationPercent,
       months: form.monthsToSimulate,
     });
-  }, [form, rehabResult.total]);
+  }, [form, rehabResult.total, asIsFallback, arvFallback]);
 
   const flipResult = useMemo(() => {
     return calculateFlip({
@@ -261,13 +265,13 @@ function AnalyzeContent() {
         currentMonthlyRent: form.currentMonthlyRent,
         monthsUntilTenantLeaves: form.monthsUntilTenantLeaves,
         targetMonthlyRent: form.targetMonthlyRent,
-        rehabPlanned: form.rehabPlanned,
+        rehabPlanned: true,
         rehabTiming: form.rehabTiming,
         rehabLengthMonths: form.rehabLengthMonths,
-        asIsValue: form.asIsValue,
+        asIsValue: asIsFallback,
       },
       purchasePrice: form.purchasePrice,
-      arv: form.arv,
+      arv: arvFallback,
       rehabTotal: rehabResult.total,
       rehabMonths: form.rehabLengthMonths,
       holdMonths: form.flipHoldMonths,
@@ -284,7 +288,7 @@ function AnalyzeContent() {
       insuranceMonthly: form.operating.insuranceAnnual / 12,
       marginalTaxRatePercent: form.marginalTaxRatePercent,
     });
-  }, [form, rehabResult.total]);
+  }, [form, rehabResult.total, asIsFallback, arvFallback]);
 
   const flipDetailed = useMemo(() => {
     return calculateFlipDetailed({
@@ -325,6 +329,9 @@ function AnalyzeContent() {
 
   const refreshSaved = async () => {
     try {
+      if (!hasApi) {
+        throw new Error("API unavailable; using local storage");
+      }
       const { items, total } = await listScenarios<FormState>({ limit: 50 });
       setSavedList(items);
       setTotalSaved(total);
@@ -727,45 +734,47 @@ function AnalyzeContent() {
                   </div>
                   <div className={styles.fieldGrid}>
                     {form.isOccupied && (
-                      <Field
-                        label="Current monthly rent"
-                        value={numberInputValue(form.currentMonthlyRent)}
-                        onChange={(v) => update("currentMonthlyRent", v)}
-                        prefix="$"
-                      />
+                      <>
+                        <Field
+                          label="Current monthly rent"
+                          value={numberInputValue(form.currentMonthlyRent)}
+                          onChange={(v) => update("currentMonthlyRent", v)}
+                          prefix="$"
+                        />
+                        <Field
+                          label="Months until current tenant leaves"
+                          value={numberInputValue(form.monthsUntilTenantLeaves)}
+                          onChange={(v) => update("monthsUntilTenantLeaves", v)}
+                          tooltip="Enter 0 if vacant or tenant leaves immediately."
+                        />
+                      </>
                     )}
-                    <Field
-                    label="Months until current tenant leaves"
-                    value={numberInputValue(form.monthsUntilTenantLeaves)}
-                    onChange={(v) => update("monthsUntilTenantLeaves", v)}
-                    tooltip="Enter 0 if vacant or tenant leaves immediately."
-                  />
+                  </div>
                 </div>
-              </div>
 
                 <div className={styles.section}>
                   <div className="section-title">
                     <h4>Rehab timing relative to tenancy</h4>
                     <div className="pill-ghost">Phase 2 • Rehab</div>
                   </div>
-                  <div className={styles.buttonRow}>
-                    <ToggleButton
-                      label="Rehab planned"
-                      active
-                      onClick={() =>
-                        update("rehabPlanned", form.strategy === Strategy.FLIP ? true : !form.rehabPlanned)
-                      }
-                    />
-                    {form.strategy !== Strategy.FLIP ? (
+                  {form.strategy === Strategy.FLIP ? (
+                    <div className="pill-ghost">Flips assume rehab.</div>
+                  ) : (
+                    <div className={styles.buttonRow}>
+                      <ToggleButton
+                        label="Rehab planned"
+                        active={form.rehabPlanned}
+                        onClick={() => update("rehabPlanned", true)}
+                      />
                       <ToggleButton
                         label="No rehab"
                         active={!form.rehabPlanned}
                         onClick={() => update("rehabPlanned", false)}
                       />
-                    ) : null}
-                  </div>
+                    </div>
+                  )}
 
-                  {form.strategy === Strategy.FLIP || form.rehabPlanned ? (
+                  {(form.strategy === Strategy.FLIP || form.rehabPlanned) ? (
                     <>
                       <div className={styles.buttonRow}>
                         <ToggleButton

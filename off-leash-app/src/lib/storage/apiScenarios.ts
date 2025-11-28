@@ -1,5 +1,6 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const base = API_BASE.replace(/\/$/, "");
+export const hasApi = Boolean(base);
 
 export type ScenarioPayload<T> = {
   id: string;
@@ -46,6 +47,14 @@ export async function listScenarios<T>(opts?: {
   if (opts?.q) params.set("q", opts.q);
   if (opts?.strategy) params.set("strategy", opts.strategy);
   const suffix = params.toString() ? `?${params.toString()}` : "";
+  if (!hasApi) {
+    return {
+      items: [],
+      total: 0,
+      limit: opts?.limit ?? 50,
+      offset: opts?.offset ?? 0,
+    };
+  }
   return request<ScenarioListResponse<T>>(`${base}/api/analyses${suffix}`);
 }
 
