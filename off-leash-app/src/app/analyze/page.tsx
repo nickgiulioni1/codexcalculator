@@ -66,7 +66,7 @@ const defaultState: FormState = {
   asIsValue: undefined,
   targetMonthlyRent: 2750,
   annualAppreciationPercent: 3,
-  monthsToSimulate: 12,
+  monthsToSimulate: 60,
   modelCurrentVsFuture: true,
   isOccupied: false,
   currentMonthlyRent: 0,
