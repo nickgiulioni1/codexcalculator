@@ -48,6 +48,10 @@ type FormState = RentTimelineInputs & {
   rehabSelections: RehabSelection[];
   includeRehabInCashRequired: boolean;
   bridgeRate: number;
+  bridgeLtvPercent: number;
+  bridgePointsPercent: number;
+  bridgeClosingCostsPercent: number;
+  includeRehabInBridge: boolean;
   refinanceLtvPercent: number;
   flipHoldMonths: number;
   sellingCostsPercent: number;
@@ -63,11 +67,11 @@ const defaultState: FormState = {
   annualAppreciationPercent: 3,
   monthsToSimulate: 12,
   modelCurrentVsFuture: true,
-  isOccupied: true,
-  currentMonthlyRent: 1800,
-  monthsUntilTenantLeaves: 2,
+  isOccupied: false,
+  currentMonthlyRent: 0,
+  monthsUntilTenantLeaves: 0,
   rehabPlanned: true,
-  rehabTiming: "AFTER_TENANT",
+  rehabTiming: "IMMEDIATE",
   rehabLengthMonths: 2,
   loan: {
     purchasePrice: 325_000,
@@ -96,6 +100,10 @@ const defaultState: FormState = {
   })),
   includeRehabInCashRequired: true,
   bridgeRate: 9,
+  bridgeLtvPercent: 100,
+  bridgePointsPercent: 1,
+  bridgeClosingCostsPercent: 2,
+  includeRehabInBridge: true,
   refinanceLtvPercent: 75,
   flipHoldMonths: 2,
   sellingCostsPercent: 2,
@@ -222,8 +230,10 @@ function AnalyzeContent() {
       longTermLoan: { ...form.loan, purchasePrice: form.purchasePrice },
       bridge: {
         interestRateAnnualPercent: form.bridgeRate,
-        pointsPercent: form.loan.lenderPointsPercent,
-        closingCostsPercent: form.loan.closingCostsPercent,
+        pointsPercent: form.bridgePointsPercent,
+        closingCostsPercent: form.bridgeClosingCostsPercent,
+        ltvPercent: form.bridgeLtvPercent,
+        includeRehabInBridge: form.includeRehabInBridge,
       },
       refinanceLtvPercent: form.refinanceLtvPercent,
       purchasePrice: form.purchasePrice,
@@ -254,8 +264,10 @@ function AnalyzeContent() {
       holdMonths: form.flipHoldMonths,
       bridge: {
         interestRateAnnualPercent: form.bridgeRate,
-        pointsPercent: form.loan.lenderPointsPercent,
-        closingCostsPercent: form.loan.closingCostsPercent,
+        pointsPercent: form.bridgePointsPercent,
+        closingCostsPercent: form.bridgeClosingCostsPercent,
+        ltvPercent: form.bridgeLtvPercent,
+        includeRehabInBridge: form.includeRehabInBridge,
       },
       sellingCostsPercent: form.sellingCostsPercent,
       agentFeePercent: form.agentFeePercent,
@@ -448,6 +460,9 @@ function AnalyzeContent() {
     if (!form.isOccupied || !form.modelCurrentVsFuture || !form.rehabPlanned) {
       setRehabTimingAutoAdjusted(false);
     }
+    if (!form.isOccupied && form.modelCurrentVsFuture && form.rehabPlanned) {
+      setForm((prev) => ({ ...prev, rehabTiming: "IMMEDIATE" }));
+    }
   }, [form.isOccupied, form.modelCurrentVsFuture, form.rehabPlanned, form.rehabTiming]);
 
   useEffect(() => {
@@ -493,16 +508,11 @@ function AnalyzeContent() {
       <div className={styles.layout}>
         <div className={styles.leftColumn}>
           <div className={`${styles.formCard} card`}>
-            {form.strategy !== Strategy.BUY_HOLD && (
-              <div className="pill-ghost" style={{ marginBottom: 10, width: "fit-content" }}>
-                {form.strategy} not yet implemented; calculations below use Buy & Hold engine.
-              </div>
-            )}
-            <div className={styles.section}>
-              <div className="section-title">
-                <h4>Scenario</h4>
-                <div className="pill-ghost">{scenarioId ? "Saved" : "Unsaved"}</div>
-              </div>
+          <div className={styles.section}>
+            <div className="section-title">
+              <h4>Scenario</h4>
+              <div className="pill-ghost">{scenarioId ? "Saved" : "Unsaved"}</div>
+            </div>
             {shareMessage ? <div className="chip badge-accent">{shareMessage}</div> : null}
             <div className={styles.statusRow}>
               <div className="chip">
@@ -605,79 +615,85 @@ function AnalyzeContent() {
                 <h4>Property snapshot</h4>
                 <div className="pill-ghost">Strategy neutral</div>
               </div>
-              <div className={styles.fieldGrid}>
-                <Field
-                  label="Purchase price"
-                  value={numberInputValue(form.purchasePrice)}
-                  onChange={(v) => update("purchasePrice", v)}
-                  prefix="$"
-                />
-                <Field
-                  label="ARV"
-                  value={numberInputValue(form.arv)}
-                  onChange={(v) => update("arv", v)}
-                  prefix="$"
-                />
-                <Field
-                  label="Annual appreciation %"
-                  value={numberInputValue(form.annualAppreciationPercent)}
-                  onChange={(v) => update("annualAppreciationPercent", v)}
-                  suffix="%"
-                />
-                <Field
-                  label="As-is value (optional)"
-                  helper="Defaults to purchase price if left blank"
-                  value={numberInputValue(form.asIsValue)}
-                  onChange={(v) => update("asIsValue", v)}
-                  prefix="$"
-                />
-                <Field
-                  label="Target monthly rent after rehab / turnover"
-                  value={numberInputValue(form.targetMonthlyRent)}
-                  onChange={(v) => update("targetMonthlyRent", v)}
-                  prefix="$"
-                />
-                <Field
-                  label="Months to simulate"
-                  helper="Drives timeline preview, rent, and value tables."
-                  value={numberInputValue(form.monthsToSimulate)}
-                  onChange={(v) => update("monthsToSimulate", Math.max(1, Math.round(v)))}
-                />
+            <div className={styles.fieldGrid}>
+              <Field
+                label="Purchase price"
+                value={numberInputValue(form.purchasePrice)}
+                onChange={(v) => update("purchasePrice", v)}
+                prefix="$"
+                tooltip="Contract price paid at closing."
+              />
+              <Field
+                label="ARV"
+                value={numberInputValue(form.arv)}
+                onChange={(v) => update("arv", v)}
+                prefix="$"
+                tooltip="After-repair value for stabilized condition."
+              />
+              <Field
+                label="Annual appreciation %"
+                value={numberInputValue(form.annualAppreciationPercent)}
+                onChange={(v) => update("annualAppreciationPercent", v)}
+                suffix="%"
+                tooltip="Assumed property value growth per year."
+              />
+              <Field
+                label="As-is value (optional)"
+                helper="Defaults to purchase price if left blank"
+                value={numberInputValue(form.asIsValue)}
+                onChange={(v) => update("asIsValue", v)}
+                prefix="$"
+                tooltip="Current market value before rehab/turnover."
+              />
+              <Field
+                label="Target monthly rent after rehab / turnover"
+                value={numberInputValue(form.targetMonthlyRent)}
+                onChange={(v) => update("targetMonthlyRent", v)}
+                prefix="$"
+                tooltip="Stabilized rent once rehab/turnover is complete."
+              />
+              <Field
+                label="Months to simulate"
+                helper="Drives timeline preview, rent, and value tables."
+                value={numberInputValue(form.monthsToSimulate)}
+                onChange={(v) => update("monthsToSimulate", Math.max(1, Math.round(v)))}
+                tooltip="How far out to run the monthly/annual schedules."
+              />
+              {form.strategy !== Strategy.BUY_HOLD ? (
                 <Field
                   label="Bridge rate % (short-term)"
                   value={numberInputValue(form.bridgeRate)}
                   onChange={(v) => update("bridgeRate", v)}
                   suffix="%"
                 />
-                <Field
-                  label="Refinance LTV % (BRRRR)"
-                  value={numberInputValue(form.refinanceLtvPercent)}
-                  onChange={(v) => update("refinanceLtvPercent", v)}
-                  suffix="%"
-                />
-                <Field
-                  label="Flip hold months (post-rehab)"
-                  value={numberInputValue(form.flipHoldMonths)}
-                  onChange={(v) => update("flipHoldMonths", v)}
-                />
-              <Field
-                label="Seller costs % (flip)"
-                value={numberInputValue(form.sellingCostsPercent)}
-                onChange={(v) => update("sellingCostsPercent", v)}
-                suffix="%"
-              />
-              <Field
-                label="Agent fee % (flip)"
-                value={numberInputValue(form.agentFeePercent)}
-                onChange={(v) => update("agentFeePercent", v)}
-                suffix="%"
-              />
-              <Field
-                label="Marginal tax rate % (flip)"
-                value={numberInputValue(form.marginalTaxRatePercent)}
-                onChange={(v) => update("marginalTaxRatePercent", v)}
-                suffix="%"
-              />
+              ) : null}
+              {form.strategy === Strategy.FLIP ? (
+                <>
+                  <Field
+                    label="Flip hold months (post-rehab)"
+                    value={numberInputValue(form.flipHoldMonths)}
+                    onChange={(v) => update("flipHoldMonths", v)}
+                  />
+                  <Field
+                    label="Seller costs % (flip)"
+                    value={numberInputValue(form.sellingCostsPercent)}
+                    onChange={(v) => update("sellingCostsPercent", v)}
+                    suffix="%"
+                  />
+                  <Field
+                    label="Agent fee % (flip)"
+                    value={numberInputValue(form.agentFeePercent)}
+                    onChange={(v) => update("agentFeePercent", v)}
+                    suffix="%"
+                  />
+                  <Field
+                    label="Marginal tax rate % (flip)"
+                    value={numberInputValue(form.marginalTaxRatePercent)}
+                    onChange={(v) => update("marginalTaxRatePercent", v)}
+                    suffix="%"
+                  />
+                </>
+              ) : null}
             </div>
           </div>
 
@@ -710,12 +726,13 @@ function AnalyzeContent() {
                       />
                     )}
                     <Field
-                      label="Months until current tenant leaves"
-                      value={numberInputValue(form.monthsUntilTenantLeaves)}
-                      onChange={(v) => update("monthsUntilTenantLeaves", v)}
-                    />
-                  </div>
+                    label="Months until current tenant leaves"
+                    value={numberInputValue(form.monthsUntilTenantLeaves)}
+                    onChange={(v) => update("monthsUntilTenantLeaves", v)}
+                    tooltip="Enter 0 if vacant or tenant leaves immediately."
+                  />
                 </div>
+              </div>
 
                 <div className={styles.section}>
                   <div className="section-title">
@@ -757,15 +774,16 @@ function AnalyzeContent() {
                         <div className="chip badge-accent">Rehab timing auto-set to after tenant move-out</div>
                       ) : null}
                       <div className={styles.fieldGrid}>
-                        <Field
-                          label="Rehab length (months)"
-                          value={numberInputValue(form.rehabLengthMonths)}
-                          onChange={(v) => update("rehabLengthMonths", v)}
-                        />
-                      </div>
-                    </>
-                  )}
-                </div>
+                      <Field
+                        label="Rehab length (months)"
+                        value={numberInputValue(form.rehabLengthMonths)}
+                        onChange={(v) => update("rehabLengthMonths", v)}
+                        tooltip="Duration of the rehab window."
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
               </>
             ) : (
               <div className={styles.section}>
@@ -780,43 +798,122 @@ function AnalyzeContent() {
               </div>
             )}
 
+          {(form.strategy === Strategy.BRRRR || form.strategy === Strategy.FLIP) && (
             <div className={styles.section}>
               <div className="section-title">
-                <h4>Financing</h4>
-                <div className="pill-ghost">Applies to Buy & Hold phase</div>
+                <h4>Short-term financing</h4>
+                <div className="pill-ghost">Bridge / rehab phase</div>
               </div>
               <div className={styles.fieldGrid}>
                 <Field
-                  label="Down payment %"
-                  value={numberInputValue(form.loan.downPaymentPercent)}
-                  onChange={(v) => update("loan", { ...form.loan, downPaymentPercent: v })}
+                  label="Bridge interest rate % (annual)"
+                  value={numberInputValue(form.bridgeRate)}
+                  onChange={(v) => update("bridgeRate", v)}
                   suffix="%"
+                  tooltip="Annual rate on the short-term bridge loan."
                 />
                 <Field
-                  label="Interest rate % (annual)"
-                  value={numberInputValue(form.loan.interestRateAnnualPercent)}
-                  onChange={(v) => update("loan", { ...form.loan, interestRateAnnualPercent: v })}
+                  label="Bridge LTV %"
+                  value={numberInputValue(form.bridgeLtvPercent)}
+                  onChange={(v) => update("bridgeLtvPercent", v)}
                   suffix="%"
+                  tooltip="Bridge loan as % of purchase (and rehab if included)."
+                />
+                <div className={styles.buttonRow}>
+                  <ToggleButton
+                    label="Include rehab in bridge"
+                    active={form.includeRehabInBridge}
+                    onClick={() => update("includeRehabInBridge", true)}
+                  />
+                  <ToggleButton
+                    label="Exclude rehab from bridge"
+                    active={!form.includeRehabInBridge}
+                    onClick={() => update("includeRehabInBridge", false)}
+                  />
+                </div>
+                <Field
+                  label="Bridge points %"
+                  value={numberInputValue(form.bridgePointsPercent)}
+                  onChange={(v) => update("bridgePointsPercent", v)}
+                  suffix="%"
+                  tooltip="Points charged on the bridge principal."
                 />
                 <Field
-                  label="Term (years)"
-                  value={numberInputValue(form.loan.termYears)}
-                  onChange={(v) => update("loan", { ...form.loan, termYears: v })}
-                />
-                <Field
-                  label="Closing costs % of purchase"
-                  value={numberInputValue(form.loan.closingCostsPercent ?? 0)}
-                  onChange={(v) => update("loan", { ...form.loan, closingCostsPercent: v })}
+                  label="Bridge closing costs % of purchase"
+                  value={numberInputValue(form.bridgeClosingCostsPercent)}
+                  onChange={(v) => update("bridgeClosingCostsPercent", v)}
                   suffix="%"
+                  tooltip="Estimated closing costs on bridge purchase."
                 />
-                <Field
-                  label="Lender points %"
-                  value={numberInputValue(form.loan.lenderPointsPercent ?? 0)}
-                  onChange={(v) => update("loan", { ...form.loan, lenderPointsPercent: v })}
-                  suffix="%"
-                />
+                {form.strategy === Strategy.FLIP ? (
+                  <Field
+                    label="Flip hold months (post-rehab)"
+                    value={numberInputValue(form.flipHoldMonths)}
+                    onChange={(v) => update("flipHoldMonths", v)}
+                  />
+                ) : null}
               </div>
             </div>
+          )}
+
+          <div className={styles.section}>
+            {form.strategy !== Strategy.FLIP ? (
+              <>
+                <div className="section-title">
+                  <h4>Long-term financing</h4>
+                  <div className="pill-ghost">Buy & Hold / BRRRR</div>
+                </div>
+                <div className={styles.fieldGrid}>
+                  <Field
+                    label="Down payment %"
+                    value={numberInputValue(form.loan.downPaymentPercent)}
+                    onChange={(v) => update("loan", { ...form.loan, downPaymentPercent: v })}
+                    suffix="%"
+                  />
+                  <Field
+                    label="Interest rate % (annual)"
+                    value={numberInputValue(form.loan.interestRateAnnualPercent)}
+                    onChange={(v) =>
+                      update("loan", { ...form.loan, interestRateAnnualPercent: v })
+                    }
+                    suffix="%"
+                  />
+                  <Field
+                    label="Term (years)"
+                    value={numberInputValue(form.loan.termYears)}
+                    onChange={(v) => update("loan", { ...form.loan, termYears: v })}
+                  />
+                  <Field
+                    label="Closing costs % of purchase"
+                    value={numberInputValue(form.loan.closingCostsPercent ?? 0)}
+                    onChange={(v) => update("loan", { ...form.loan, closingCostsPercent: v })}
+                    suffix="%"
+                    tooltip="Estimate of lender/title costs at purchase."
+                  />
+                  <Field
+                    label="Lender points %"
+                    value={numberInputValue(form.loan.lenderPointsPercent ?? 0)}
+                    onChange={(v) => update("loan", { ...form.loan, lenderPointsPercent: v })}
+                    suffix="%"
+                    tooltip="Points charged on the long-term loan amount."
+                  />
+                  {form.strategy === Strategy.BRRRR ? (
+                    <Field
+                      label="Refinance LTV % (BRRRR)"
+                      value={numberInputValue(form.refinanceLtvPercent)}
+                      onChange={(v) => update("refinanceLtvPercent", v)}
+                      suffix="%"
+                    />
+                  ) : null}
+                </div>
+              </>
+            ) : (
+              <div className="section-title">
+                <h4>Long-term financing</h4>
+                <div className="pill-ghost">Not used for Flip</div>
+              </div>
+            )}
+          </div>
 
             <div className={styles.section}>
               <div className="section-title">
@@ -1513,11 +1610,12 @@ type FieldProps = {
   onChange: (value: number) => void;
   prefix?: string;
   suffix?: string;
+  tooltip?: string;
 };
 
-function Field({ label, helper, value, onChange, prefix, suffix }: FieldProps) {
+function Field({ label, helper, value, onChange, prefix, suffix, tooltip }: FieldProps) {
   return (
-    <label className="input-group">
+    <label className="input-group" title={tooltip ?? helper}>
       <div className="input-label">{label}</div>
       <div className={styles.inputShell}>
         {prefix ? <span className={styles.prefix}>{prefix}</span> : null}

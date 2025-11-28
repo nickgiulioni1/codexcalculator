@@ -42,6 +42,8 @@ const baseInput: BRRRRInputs = {
     interestRateAnnualPercent: 9,
     pointsPercent: 1,
     closingCostsPercent: 2,
+    ltvPercent: 100,
+    includeRehabInBridge: true,
   },
   refinanceLtvPercent: 75,
   purchasePrice: 250000,

@@ -31,6 +31,8 @@ describe("calculateFlip", () => {
         interestRateAnnualPercent: 9,
         pointsPercent: 1,
         closingCostsPercent: 2,
+        ltvPercent: 100,
+        includeRehabInBridge: true,
       },
       sellingCostsPercent: 2,
       agentFeePercent: 5,

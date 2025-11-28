@@ -146,6 +146,8 @@ export type BRRRRInputs = {
     interestRateAnnualPercent: number;
     pointsPercent?: number;
     closingCostsPercent?: number;
+    ltvPercent?: number;
+    includeRehabInBridge?: boolean;
   };
   refinanceLtvPercent: number;
   purchasePrice: number;
@@ -176,6 +178,8 @@ export type FlipInputs = {
     interestRateAnnualPercent: number;
     pointsPercent?: number;
     closingCostsPercent?: number;
+    ltvPercent?: number;
+    includeRehabInBridge?: boolean;
   };
   sellingCostsPercent: number;
   agentFeePercent: number;

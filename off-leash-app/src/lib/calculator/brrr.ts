@@ -19,7 +19,8 @@ export function calculateBRRRR(inputs: BRRRRInputs): BRRRRResult {
     otherMonthlyExpenses: 0,
   };
 
-  const bridgePrincipal = inputs.purchasePrice + inputs.rehabTotal;
+  const bridgeBase = inputs.purchasePrice + (inputs.bridge.includeRehabInBridge ?? true ? inputs.rehabTotal : 0);
+  const bridgePrincipal = bridgeBase * (inputs.bridge.ltvPercent ?? 100) / 100;
   const bridgePoints = (inputs.bridge.pointsPercent ?? 0) * bridgePrincipal / 100;
   const bridgeClosing = (inputs.bridge.closingCostsPercent ?? 0) * inputs.purchasePrice / 100;
   const monthlyBridgeRate = pct(inputs.bridge.interestRateAnnualPercent) / 12;

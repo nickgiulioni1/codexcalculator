@@ -41,7 +41,8 @@ export function calculateFlipDetailed(inputs: FlipInputs): FlipDetailedResult {
     : inputs.rehabMonths;
   const monthsFinanced = rehabDuration + inputs.holdMonths + phases.tenantMonths;
 
-  const bridgePrincipal = inputs.purchasePrice + inputs.rehabTotal;
+  const bridgeBase = inputs.purchasePrice + (inputs.bridge.includeRehabInBridge ?? true ? inputs.rehabTotal : 0);
+  const bridgePrincipal = bridgeBase * (inputs.bridge.ltvPercent ?? 100) / 100;
   const points = (inputs.bridge.pointsPercent ?? 0) * bridgePrincipal / 100;
   const closing = (inputs.bridge.closingCostsPercent ?? 0) * inputs.purchasePrice / 100;
   const monthlyRate = pct(inputs.bridge.interestRateAnnualPercent) / 12;
