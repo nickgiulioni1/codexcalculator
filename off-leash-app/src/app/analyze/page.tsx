@@ -1654,11 +1654,12 @@ type FieldProps = {
 };
 
 function Field({ label, helper, value, onChange, prefix, suffix, tooltip }: FieldProps) {
+  const leftAdornment = prefix ?? suffix;
   return (
     <label className="input-group" title={tooltip ?? helper}>
       <div className="input-label">{label}</div>
       <div className={styles.inputShell}>
-        {prefix ? <span className={styles.prefix}>{prefix}</span> : null}
+        {leftAdornment ? <span className={styles.prefix}>{leftAdornment}</span> : null}
         <input
           className={`input ${styles.input}`}
           type="number"
@@ -1666,7 +1667,6 @@ function Field({ label, helper, value, onChange, prefix, suffix, tooltip }: Fiel
           onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
           min={0}
         />
-        {suffix ? <span className={styles.suffix}>{suffix}</span> : null}
       </div>
       {helper ? <div className="input-helper">{helper}</div> : null}
     </label>
