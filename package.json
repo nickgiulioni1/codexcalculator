@@ -1,0 +1,11 @@
+{
+  "name": "codex-calculator-root",
+  "private": true,
+  "scripts": {
+    "dev": "cd off-leash-app && npm run dev",
+    "build": "cd off-leash-app && npm run build",
+    "start": "cd off-leash-app && npm run start",
+    "lint": "cd off-leash-app && npm run lint",
+    "test": "cd off-leash-app && npm test"
+  }
+}

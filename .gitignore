@@ -1,0 +1,12 @@
+node_modules
+package-lock.json
+.env*
+.DS_Store
+.npm
+
+# app artifacts
+off-leash-app/node_modules
+off-leash-app/.next
+off-leash-app/out
+off-leash-app/.env*
+off-leash-app/data
