@@ -313,10 +313,11 @@ export function calculateRehabTotal(
       if (!item) {
         throw new Error(`Unknown rehab item: ${selection.itemId}`);
       }
-      const unitPrice =
+      const defaultUnit =
         grade === "RETAIL" && selection.customRetailPrice
           ? selection.customRetailPrice
           : getUnitPrice(item, grade);
+      const unitPrice = selection.customUnitPrice ?? defaultUnit;
       const quantity = selection.quantity ?? item.defaultQuantity ?? 0;
       const lineTotal = unitPrice * quantity;
       return { item, quantity, unitPrice, lineTotal };

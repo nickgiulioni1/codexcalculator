@@ -70,7 +70,7 @@ const defaultState: FormState = {
   isOccupied: false,
   currentMonthlyRent: 0,
   monthsUntilTenantLeaves: 0,
-  rehabPlanned: true,
+  rehabPlanned: false,
   rehabTiming: "IMMEDIATE",
   rehabLengthMonths: 2,
   loan: {
@@ -103,7 +103,7 @@ const defaultState: FormState = {
   bridgeLtvPercent: 100,
   bridgePointsPercent: 1,
   bridgeClosingCostsPercent: 2,
-  includeRehabInBridge: true,
+  includeRehabInBridge: false,
   refinanceLtvPercent: 75,
   flipHoldMonths: 2,
   sellingCostsPercent: 2,
@@ -163,6 +163,15 @@ function AnalyzeContent() {
       ...prev,
       rehabSelections: prev.rehabSelections.map((sel) =>
         sel.itemId === itemId ? { ...sel, quantity, enabled: quantity > 0 ? true : sel.enabled } : sel,
+      ),
+    }));
+  };
+
+  const updateRehabUnitPrice = (itemId: string, unitPrice: number) => {
+    setForm((prev) => ({
+      ...prev,
+      rehabSelections: prev.rehabSelections.map((sel) =>
+        sel.itemId === itemId ? { ...sel, customUnitPrice: unitPrice, enabled: sel.enabled ?? unitPrice > 0 } : sel,
       ),
     }));
   };
@@ -972,11 +981,12 @@ function AnalyzeContent() {
               </div>
             </div>
 
-            <div className={styles.section}>
-              <div className="section-title">
-                <h4>Rehab estimator</h4>
-                <div className="pill-ghost">Rental vs Flip/Premium vs Retail (1.5x)</div>
-              </div>
+          {form.rehabPlanned && (
+              <div className={styles.section}>
+                <div className="section-title">
+                  <h4>Rehab estimator</h4>
+                  <div className="pill-ghost">Rental vs Flip/Premium vs Retail (1.5x)</div>
+                </div>
               <div className={styles.buttonRow}>
                 <ToggleButton
                   label="Include rehab in cash required"
@@ -1034,12 +1044,15 @@ function AnalyzeContent() {
                                 form.rehabSelections.find((s) => s.itemId === item.id) ??
                                 { itemId: item.id, quantity: item.defaultQuantity ?? 0, enabled: false };
                               const line = rehabResult.lineItems.find((l) => l.item.id === item.id);
-                              const unitPrice =
+                              const baseUnit =
                                 line?.unitPrice ??
                                 (form.rehabClass === RehabClass.RETAIL
                                   ? getUnitPrice(item, RehabClass.RETAIL)
                                   : getUnitPrice(item, form.rehabClass));
-                              const lineTotal = selection.enabled ? (line?.lineTotal ?? unitPrice * (selection.quantity ?? 0)) : 0;
+                              const effectiveUnit = selection.customUnitPrice ?? baseUnit;
+                              const lineTotal = selection.enabled
+                                ? (line?.lineTotal ?? effectiveUnit * (selection.quantity ?? 0))
+                                : 0;
                               return (
                                 <tr key={item.id}>
                                   <td>
@@ -1067,7 +1080,21 @@ function AnalyzeContent() {
                                       }
                                     />
                                   </td>
-                                  <td>{currency.format(Math.round(unitPrice))}</td>
+                                  <td>
+                                    <input
+                                      className={`input ${styles.input} ${styles.qtyInput}`}
+                                      type="number"
+                                      min={0}
+                                      value={numberInputValue(selection.customUnitPrice ?? baseUnit)}
+                                      disabled={!selection.enabled}
+                                      onChange={(e) =>
+                                        updateRehabUnitPrice(
+                                          item.id,
+                                          Math.max(0, parseFloat(e.target.value) || 0),
+                                        )
+                                      }
+                                    />
+                                  </td>
                                   <td>{currency.format(Math.round(lineTotal))}</td>
                                 </tr>
                               );
@@ -1080,6 +1107,7 @@ function AnalyzeContent() {
                 )}
               </div>
             </div>
+          )}
           </div>
         </div>
 
@@ -1092,13 +1120,13 @@ function AnalyzeContent() {
               </div>
               <div className="pill-ghost">{form.monthsToSimulate} mo horizon</div>
             </header>
-            {form.strategy === Strategy.BUY_HOLD && (
-              <div className={styles.kpiGrid}>
-                <Kpi
-                  label="Cash required"
-                  value={currency.format(Math.round(buyHoldResult.metrics.cashRequired))}
-                  hint={form.includeRehabInCashRequired ? "Includes rehab total" : "Excludes rehab total"}
-                />
+          {form.strategy === Strategy.BUY_HOLD && (
+            <div className={styles.kpiGrid}>
+              <Kpi
+                label="Cash required"
+                value={currency.format(Math.round(buyHoldResult.metrics.cashRequired))}
+                hint={form.includeRehabInCashRequired ? "Includes rehab total" : "Excludes rehab total"}
+              />
                 <Kpi
                   label="Cumulative cash flow"
                   value={currency.format(Math.round(lastMonth?.cumulativeCashFlow ?? 0))}
@@ -1109,31 +1137,35 @@ function AnalyzeContent() {
                   value={currency.format(Math.round(lastMonth?.equity ?? 0))}
                   hint="Property value minus loan balance."
                 />
-                <Kpi
-                  label="Total return"
-                  value={currency.format(Math.round(buyHoldResult.metrics.totalReturn))}
-                  hint="Equity + cumulative cash flow."
-                />
+              <Kpi
+                label="Total return"
+                value={currency.format(Math.round(buyHoldResult.metrics.totalReturn))}
+                hint="Equity + cumulative cash flow."
+              />
+              {form.rehabPlanned ? (
                 <Kpi
                   label="Rehab total"
                   value={currency.format(Math.round(rehabResult.total))}
                   hint={`Grade: ${form.rehabClass}`}
                 />
-              </div>
-            )}
+              ) : null}
+            </div>
+          )}
 
-            {form.strategy === Strategy.BRRRR && (
-              <div className={styles.kpiGrid}>
+          {form.strategy === Strategy.BRRRR && (
+            <div className={styles.kpiGrid}>
                 <Kpi label="Refi month" value={`Month ${brrrResult.refinanceMonth}`} hint="ARV realized after rehab" />
                 <Kpi label="Cash required" value={currency.format(Math.round(brrrResult.metrics.cashRequired))} hint="Rehab + bridge costs + carry" />
-                <Kpi label="Bridge interest" value={currency.format(Math.round(brrrResult.bridgeInterest))} hint="Accrued until refi" />
-                <Kpi label="Carry to refi" value={currency.format(Math.round(brrrResult.carryingCosts))} hint="Bridge interest + taxes/insurance/other" />
-                <Kpi label="Cash out at refi" value={currency.format(Math.round(brrrResult.cashOut))} hint="Max(Refi - payoff, 0)" />
-                <Kpi label="COC post-refi" value={`${((brrrResult.metrics.coc ?? 0) * 100).toFixed(1)}%`} hint="Cash flow after refi / cash required" />
-                <Kpi label="DSCR (Y1 post-refi)" value={(brrrResult.annual[0]?.dscr ?? 0).toFixed(2)} hint="NOI / debt service" />
+              <Kpi label="Bridge interest" value={currency.format(Math.round(brrrResult.bridgeInterest))} hint="Accrued until refi" />
+              <Kpi label="Carry to refi" value={currency.format(Math.round(brrrResult.carryingCosts))} hint="Bridge interest + taxes/insurance/other" />
+              <Kpi label="Cash out at refi" value={currency.format(Math.round(brrrResult.cashOut))} hint="Max(Refi - payoff, 0)" />
+              <Kpi label="COC post-refi" value={`${((brrrResult.metrics.coc ?? 0) * 100).toFixed(1)}%`} hint="Cash flow after refi / cash required" />
+              <Kpi label="DSCR (Y1 post-refi)" value={(brrrResult.annual[0]?.dscr ?? 0).toFixed(2)} hint="NOI / debt service" />
+              {form.rehabPlanned ? (
                 <Kpi label="Rehab total" value={currency.format(Math.round(rehabResult.total))} hint={`Grade: ${form.rehabClass}`} />
-              </div>
-            )}
+              ) : null}
+            </div>
+          )}
 
           {form.strategy === Strategy.FLIP && (
             <div className={styles.kpiGrid}>
@@ -1186,14 +1218,15 @@ function AnalyzeContent() {
             )}
           </div>
 
-          <div className={`${styles.summaryCard} card`}>
-            <header className={styles.summaryHeader}>
-              <div>
-                <div className={styles.kicker}>Rehab breakdown</div>
-                <h3>Line items ({form.rehabClass})</h3>
-              </div>
-              <div className="pill-ghost">Total: {currency.format(Math.round(rehabResult.total))}</div>
-            </header>
+        {form.rehabPlanned && (
+        <div className={`${styles.summaryCard} card`}>
+          <header className={styles.summaryHeader}>
+            <div>
+              <div className={styles.kicker}>Rehab breakdown</div>
+              <h3>Line items ({form.rehabClass})</h3>
+            </div>
+            <div className="pill-ghost">Total: {currency.format(Math.round(rehabResult.total))}</div>
+          </header>
             <table className={styles.miniTable}>
               <thead>
                 <tr>
@@ -1212,9 +1245,10 @@ function AnalyzeContent() {
                     <td>{currency.format(Math.round(line.lineTotal))}</td>
                   </tr>
                 ))}
-              </tbody>
-            </table>
-          </div>
+            </tbody>
+          </table>
+        </div>
+        )}
 
           <div className={`${styles.summaryCard} card`}>
             <header className={styles.summaryHeader}>

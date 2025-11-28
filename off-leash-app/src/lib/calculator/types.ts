@@ -257,5 +257,6 @@ export type RehabSelection = {
   itemId: string;
   quantity?: number;
   customRetailPrice?: number;
+  customUnitPrice?: number;
   enabled?: boolean;
 };
