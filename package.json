@@ -4,6 +4,7 @@
   "scripts": {
     "dev": "cd off-leash-app && npm run dev",
     "build": "cd off-leash-app && npm run build",
+    "export": "cd off-leash-app && npm run export",
     "start": "cd off-leash-app && npm run start",
     "lint": "cd off-leash-app && npm run lint",
     "test": "cd off-leash-app && npm test"
