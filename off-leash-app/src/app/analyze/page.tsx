@@ -140,7 +140,7 @@ function AnalyzeContent() {
       currentMonthlyRent: form.currentMonthlyRent,
       monthsUntilTenantLeaves: form.monthsUntilTenantLeaves,
       targetMonthlyRent: form.targetMonthlyRent,
-      rehabPlanned: form.rehabPlanned,
+      rehabPlanned: form.strategy === Strategy.FLIP ? true : form.rehabPlanned,
       rehabTiming: form.rehabTiming,
       rehabLengthMonths: form.rehabLengthMonths,
       asIsValue: form.asIsValue,
@@ -207,7 +207,7 @@ function AnalyzeContent() {
         currentMonthlyRent: form.currentMonthlyRent,
         monthsUntilTenantLeaves: form.monthsUntilTenantLeaves,
         targetMonthlyRent: form.targetMonthlyRent,
-        rehabPlanned: form.rehabPlanned,
+      rehabPlanned: form.strategy === Strategy.FLIP ? true : form.rehabPlanned,
         rehabTiming: form.rehabTiming,
         rehabLengthMonths: form.rehabLengthMonths,
         asIsValue: form.asIsValue,
@@ -230,7 +230,7 @@ function AnalyzeContent() {
         currentMonthlyRent: form.currentMonthlyRent,
         monthsUntilTenantLeaves: form.monthsUntilTenantLeaves,
         targetMonthlyRent: form.targetMonthlyRent,
-        rehabPlanned: form.rehabPlanned,
+      rehabPlanned: form.strategy === Strategy.FLIP ? true : form.rehabPlanned,
         rehabTiming: form.rehabTiming,
         rehabLengthMonths: form.rehabLengthMonths,
         asIsValue: form.asIsValue,
@@ -751,17 +751,21 @@ function AnalyzeContent() {
                   <div className={styles.buttonRow}>
                     <ToggleButton
                       label="Rehab planned"
-                      active={form.rehabPlanned}
-                      onClick={() => update("rehabPlanned", true)}
+                      active
+                      onClick={() =>
+                        update("rehabPlanned", form.strategy === Strategy.FLIP ? true : !form.rehabPlanned)
+                      }
                     />
-                    <ToggleButton
-                      label="No rehab"
-                      active={!form.rehabPlanned}
-                      onClick={() => update("rehabPlanned", false)}
-                    />
+                    {form.strategy !== Strategy.FLIP ? (
+                      <ToggleButton
+                        label="No rehab"
+                        active={!form.rehabPlanned}
+                        onClick={() => update("rehabPlanned", false)}
+                      />
+                    ) : null}
                   </div>
 
-                  {form.rehabPlanned && (
+                  {form.strategy === Strategy.FLIP || form.rehabPlanned ? (
                     <>
                       <div className={styles.buttonRow}>
                         <ToggleButton
@@ -783,16 +787,16 @@ function AnalyzeContent() {
                         <div className="chip badge-accent">Rehab timing auto-set to after tenant move-out</div>
                       ) : null}
                       <div className={styles.fieldGrid}>
-                      <Field
-                        label="Rehab length (months)"
-                        value={numberInputValue(form.rehabLengthMonths)}
-                        onChange={(v) => update("rehabLengthMonths", v)}
-                        tooltip="Duration of the rehab window."
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
+                        <Field
+                          label="Rehab length (months)"
+                          value={numberInputValue(form.rehabLengthMonths)}
+                          onChange={(v) => update("rehabLengthMonths", v)}
+                          tooltip="Duration of the rehab window."
+                        />
+                      </div>
+                    </>
+                  ) : null}
+                </div>
               </>
             ) : (
               <div className={styles.section}>
@@ -981,12 +985,12 @@ function AnalyzeContent() {
               </div>
             </div>
 
-          {form.rehabPlanned && (
-              <div className={styles.section}>
-                <div className="section-title">
-                  <h4>Rehab estimator</h4>
-                  <div className="pill-ghost">Rental vs Flip/Premium vs Retail (1.5x)</div>
-                </div>
+          {(form.strategy === Strategy.FLIP || form.rehabPlanned) && (
+            <div className={styles.section}>
+              <div className="section-title">
+                <h4>Rehab estimator</h4>
+                <div className="pill-ghost">Rental vs Flip/Premium vs Retail (1.5x)</div>
+              </div>
               <div className={styles.buttonRow}>
                 <ToggleButton
                   label="Include rehab in cash required"
@@ -1218,7 +1222,7 @@ function AnalyzeContent() {
             )}
           </div>
 
-        {form.rehabPlanned && (
+        {(form.strategy === Strategy.FLIP || form.rehabPlanned) && (
         <div className={`${styles.summaryCard} card`}>
           <header className={styles.summaryHeader}>
             <div>
