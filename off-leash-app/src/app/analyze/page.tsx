@@ -869,64 +869,57 @@ function AnalyzeContent() {
             </div>
           )}
 
-          <div className={styles.section}>
-            {form.strategy !== Strategy.FLIP ? (
-              <>
-                <div className="section-title">
-                  <h4>Long-term financing</h4>
-                  <div className="pill-ghost">Buy & Hold / BRRRR</div>
-                </div>
-                <div className={styles.fieldGrid}>
-                  <Field
-                    label="Down payment %"
-                    value={numberInputValue(form.loan.downPaymentPercent)}
-                    onChange={(v) => update("loan", { ...form.loan, downPaymentPercent: v })}
-                    suffix="%"
-                  />
-                  <Field
-                    label="Interest rate % (annual)"
-                    value={numberInputValue(form.loan.interestRateAnnualPercent)}
-                    onChange={(v) =>
-                      update("loan", { ...form.loan, interestRateAnnualPercent: v })
-                    }
-                    suffix="%"
-                  />
-                  <Field
-                    label="Term (years)"
-                    value={numberInputValue(form.loan.termYears)}
-                    onChange={(v) => update("loan", { ...form.loan, termYears: v })}
-                  />
-                  <Field
-                    label="Closing costs % of purchase"
-                    value={numberInputValue(form.loan.closingCostsPercent ?? 0)}
-                    onChange={(v) => update("loan", { ...form.loan, closingCostsPercent: v })}
-                    suffix="%"
-                    tooltip="Estimate of lender/title costs at purchase."
-                  />
-                  <Field
-                    label="Lender points %"
-                    value={numberInputValue(form.loan.lenderPointsPercent ?? 0)}
-                    onChange={(v) => update("loan", { ...form.loan, lenderPointsPercent: v })}
-                    suffix="%"
-                    tooltip="Points charged on the long-term loan amount."
-                  />
-                  {form.strategy === Strategy.BRRRR ? (
-                    <Field
-                      label="Refinance LTV % (BRRRR)"
-                      value={numberInputValue(form.refinanceLtvPercent)}
-                      onChange={(v) => update("refinanceLtvPercent", v)}
-                      suffix="%"
-                    />
-                  ) : null}
-                </div>
-              </>
-            ) : (
+          {form.strategy !== Strategy.FLIP && (
+            <div className={styles.section}>
               <div className="section-title">
                 <h4>Long-term financing</h4>
-                <div className="pill-ghost">Not used for Flip</div>
+                <div className="pill-ghost">Buy & Hold / BRRRR</div>
               </div>
-            )}
-          </div>
+              <div className={styles.fieldGrid}>
+                <Field
+                  label="Down payment %"
+                  value={numberInputValue(form.loan.downPaymentPercent)}
+                  onChange={(v) => update("loan", { ...form.loan, downPaymentPercent: v })}
+                  suffix="%"
+                />
+                <Field
+                  label="Interest rate % (annual)"
+                  value={numberInputValue(form.loan.interestRateAnnualPercent)}
+                  onChange={(v) =>
+                    update("loan", { ...form.loan, interestRateAnnualPercent: v })
+                  }
+                  suffix="%"
+                />
+                <Field
+                  label="Term (years)"
+                  value={numberInputValue(form.loan.termYears)}
+                  onChange={(v) => update("loan", { ...form.loan, termYears: v })}
+                />
+                <Field
+                  label="Closing costs % of purchase"
+                  value={numberInputValue(form.loan.closingCostsPercent ?? 0)}
+                  onChange={(v) => update("loan", { ...form.loan, closingCostsPercent: v })}
+                  suffix="%"
+                  tooltip="Estimate of lender/title costs at purchase."
+                />
+                <Field
+                  label="Lender points %"
+                  value={numberInputValue(form.loan.lenderPointsPercent ?? 0)}
+                  onChange={(v) => update("loan", { ...form.loan, lenderPointsPercent: v })}
+                  suffix="%"
+                  tooltip="Points charged on the long-term loan amount."
+                />
+                {form.strategy === Strategy.BRRRR ? (
+                  <Field
+                    label="Refinance LTV % (BRRRR)"
+                    value={numberInputValue(form.refinanceLtvPercent)}
+                    onChange={(v) => update("refinanceLtvPercent", v)}
+                    suffix="%"
+                  />
+                ) : null}
+              </div>
+            </div>
+          )}
 
             <div className={styles.section}>
               <div className="section-title">
