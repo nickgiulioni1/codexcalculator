@@ -1,0 +1,321 @@
+.page {
+  display: grid;
+  gap: 16px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.9fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-self: start;
+}
+
+.formCard {
+  padding: 20px;
+  display: grid;
+  gap: 16px;
+}
+
+.formHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.kicker {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: #fbf9f7;
+  border: 1px solid var(--border);
+}
+
+.switch input {
+  width: 16px;
+  height: 16px;
+}
+
+.section {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  background: #fbf9f7;
+  display: grid;
+  gap: 12px;
+}
+
+.fieldGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.buttonRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.toggleButton {
+  border: 1px solid var(--border);
+  background: #fff;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggleButtonActive {
+  background: var(--accent-soft);
+  border-color: #ff9ab3;
+  color: #b3124a;
+  box-shadow: 0 8px 18px rgba(255, 56, 92, 0.15);
+}
+
+.toggleButtonDisabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.inputShell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.input {
+  background: transparent;
+}
+
+.prefix {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  font-weight: 700;
+}
+
+.suffix {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  font-weight: 700;
+}
+
+.summaryCard {
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.summaryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.timelineBar {
+  display: flex;
+  gap: 8px;
+}
+
+.timelineSegment {
+  border-radius: 14px;
+  padding: 12px;
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--border);
+  min-width: 0;
+}
+
+.current {
+  background: #fef6f3;
+}
+
+.rehab {
+  background: #fff5f5;
+}
+
+.timelineMuted {
+  opacity: 0.6;
+}
+
+.stabilized {
+  background: #f1fff8;
+}
+
+.dataList {
+  display: grid;
+  gap: 8px;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.resultsCard {
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.kpiCard {
+  background: #fbf9f7;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.kpiLabel {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.kpiValue {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.kpiHint {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.table thead {
+  background: #f5f0eb;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+}
+
+.table th,
+.table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.inlineNote {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.subgrid {
+  display: grid;
+  gap: 8px;
+}
+
+.miniTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.miniTable th,
+.miniTable td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.miniTable th {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+}
+
+.rehabSection {
+  display: grid;
+  gap: 12px;
+}
+
+.categoryBlock {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  background: #fbf9f7;
+  transition: border-color 0.2s ease;
+}
+
+.categoryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.categoryTitle {
+  font-weight: 700;
+}
+
+.qtyInput {
+  width: 100%;
+  max-width: 90px;
+}
+
+.pillRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+@media (max-width: 1024px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
