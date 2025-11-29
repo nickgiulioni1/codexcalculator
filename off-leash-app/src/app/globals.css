@@ -293,9 +293,30 @@ a {
 
   .nav {
     position: relative;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
   }
 
   .row {
     flex-direction: column;
+  }
+
+  .nav-left {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .nav-links {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .nav-link,
+  .btn {
+    width: 100%;
+    justify-content: center;
   }
 }
