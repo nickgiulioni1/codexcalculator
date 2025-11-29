@@ -1,20 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { Manrope, Space_Grotesk } from "next/font/google";
 import "./globals.css";
-
-const manrope = Manrope({
-  variable: "--font-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-display",
-  subsets: ["latin"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Off Leash Deal Analyzer",
@@ -29,7 +16,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${manrope.variable} ${spaceGrotesk.variable}`}>
+      <body>
         <div className="bg-accent-blob" />
         <div className="app-shell">
           <div className="site-frame">
