@@ -17,6 +17,8 @@ export type RentTimelineInputs = {
   monthsUntilTenantLeaves: number;
   /** Target stabilized rent after rehab / turnover. */
   targetMonthlyRent: number;
+  /** Annual rent growth rate (e.g., 3 for 3%); defaults to 0 when omitted. */
+  annualRentGrowthPercent?: number;
   /** Whether a rehab is part of the analysis. */
   rehabPlanned: boolean;
   /** When rehab begins relative to purchase and tenancy. */

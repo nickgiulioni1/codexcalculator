@@ -7,6 +7,7 @@ const baseRent = {
   currentMonthlyRent: 0,
   monthsUntilTenantLeaves: 0,
   targetMonthlyRent: 2000,
+  annualRentGrowthPercent: 0,
   rehabPlanned: true,
   rehabTiming: "IMMEDIATE" as const,
   rehabLengthMonths: 2,
@@ -139,5 +140,27 @@ describe("calculateBRRRR", () => {
     expect(rehabCash.metrics.cashRequiredBreakdown.rehab).toBeCloseTo(50000, 0);
     // Cash required should reflect equity + rehab + interest (two months at 1% on 160k) + carrying.
     expect(rehabCash.metrics.cashRequired).toBeCloseTo(94200, 0);
+  });
+
+  it("applies rent appreciation before and after rehab/refi", () => {
+    const annualGrowth = 10;
+    const appreciating = calculateBRRRR({
+      ...baseInput,
+      rent: {
+        ...baseRent,
+        isOccupied: true,
+        currentMonthlyRent: 1200,
+        monthsUntilTenantLeaves: 2,
+        annualRentGrowthPercent: annualGrowth,
+      },
+      months: 12,
+    });
+
+    const rents = appreciating.monthly.map((m) => m.rent);
+    expect(rents[1]).toBeGreaterThan(rents[0]); // current tenant growth
+    expect(rents[2]).toBe(0); // rehab pause
+    expect(rents[3]).toBe(0); // rehab pause
+    expect(rents[4]).toBeGreaterThan(0); // stabilized restart with appreciation applied
+    expect(rents[5]).toBeGreaterThan(rents[4]); // growth continues post-rehab
   });
 });

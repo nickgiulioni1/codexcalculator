@@ -18,11 +18,14 @@ export type RentScheduleResult = {
   zeroMonths: number;
 };
 
+const monthlyFromAnnual = (annualPercent: number) =>
+  Math.pow(1 + annualPercent / 100, 1 / 12) - 1;
+
 type RentScheduleOptions = {
   months?: number;
   /**
    * Optional growth factors per month for current and stabilized phases.
-   * Defaults to 1 (flat) to avoid speculative inflation beyond the PRD snippet.
+   * Defaults to annualRentGrowthPercent on the inputs (or flat if omitted).
    */
   currentGrowth?: (month: number) => number;
   futureGrowth?: (month: number) => number;
@@ -39,8 +42,10 @@ export function buildRentSchedule(
   options: RentScheduleOptions = {},
 ): RentScheduleResult {
   const months = options.months ?? 12;
-  const currentGrowth = options.currentGrowth ?? (() => 1);
-  const futureGrowth = options.futureGrowth ?? (() => 1);
+  const monthlyGrowthRate = monthlyFromAnnual(inputs.annualRentGrowthPercent ?? 0);
+  const defaultGrowth = (month: number) => Math.pow(1 + monthlyGrowthRate, month - 1);
+  const currentGrowth = options.currentGrowth ?? defaultGrowth;
+  const futureGrowth = options.futureGrowth ?? defaultGrowth;
   const phases = deriveTimeline(inputs);
 
   const schedule: RentEntry[] = [];
@@ -62,7 +67,7 @@ export function buildRentSchedule(
       rent = 0;
     } else if (inputs.modelCurrentVsFuture === false && month === 1) {
       phase = "STABILIZED";
-      rent = inputs.targetMonthlyRent;
+      rent = inputs.targetMonthlyRent * futureGrowth(month);
     }
 
     schedule.push({ month, phase, rent });

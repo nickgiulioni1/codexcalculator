@@ -13,6 +13,7 @@ const base: BRRRRInputs = {
     currentMonthlyRent: 900,
     monthsUntilTenantLeaves: 2,
     targetMonthlyRent: 1600,
+    annualRentGrowthPercent: 0,
     rehabPlanned: true,
     rehabTiming: "AFTER_TENANT",
     rehabLengthMonths: 2,

@@ -31,6 +31,7 @@ export function calculateFlipDetailed(inputs: FlipInputs): FlipDetailedResult {
     currentMonthlyRent: 0,
     monthsUntilTenantLeaves: 0,
     targetMonthlyRent: 0,
+    annualRentGrowthPercent: 0,
     rehabPlanned: true,
     rehabTiming: "IMMEDIATE",
     rehabLengthMonths: inputs.rehabMonths,

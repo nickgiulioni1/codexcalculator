@@ -12,6 +12,7 @@ const baseRent = {
   currentMonthlyRent: 1200,
   monthsUntilTenantLeaves: 2,
   targetMonthlyRent: 2000,
+  annualRentGrowthPercent: 0,
   rehabPlanned: true,
   rehabTiming: "AFTER_TENANT" as const,
   rehabLengthMonths: 2,

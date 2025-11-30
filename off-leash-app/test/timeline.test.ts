@@ -85,6 +85,7 @@ describe("buildRentSchedule", () => {
         currentMonthlyRent: 900,
         monthsUntilTenantLeaves: 1,
         targetMonthlyRent: 1500,
+        annualRentGrowthPercent: 0,
         rehabPlanned: true,
         rehabTiming: "AFTER_TENANT",
         rehabLengthMonths: 2,
@@ -98,6 +99,31 @@ describe("buildRentSchedule", () => {
     expect(rents[1]).toBe(0); // rehab month 2
     expect(rents[2]).toBe(0); // rehab month 3
     expect(rents[3]).toBe(1500); // stabilized month 4
+  });
+
+  it("applies rent appreciation across current and stabilized phases", () => {
+    const annualGrowth = 6;
+    const schedule = buildRentSchedule(
+      {
+        modelCurrentVsFuture: true,
+        isOccupied: true,
+        currentMonthlyRent: 1000,
+        monthsUntilTenantLeaves: 2,
+        targetMonthlyRent: 1500,
+        annualRentGrowthPercent: annualGrowth,
+        rehabPlanned: false,
+        rehabTiming: "IMMEDIATE",
+        rehabLengthMonths: 0,
+        asIsValue: 200000,
+      },
+      { months: 5 },
+    );
+
+    const monthlyRate = Math.pow(1 + annualGrowth / 100, 1 / 12) - 1;
+    const rents = schedule.schedule.map((m) => m.rent);
+    expect(rents[1]).toBeCloseTo(1000 * Math.pow(1 + monthlyRate, 1), 4);
+    expect(rents[2]).toBeCloseTo(1500 * Math.pow(1 + monthlyRate, 2), 4);
+    expect(rents[3]).toBeGreaterThan(rents[2]);
   });
 });
 

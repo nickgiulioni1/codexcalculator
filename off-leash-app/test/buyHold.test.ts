@@ -7,6 +7,7 @@ const baseRent = {
   currentMonthlyRent: 0,
   monthsUntilTenantLeaves: 0,
   targetMonthlyRent: 1000,
+  annualRentGrowthPercent: 0,
   rehabPlanned: false,
   rehabTiming: "IMMEDIATE" as const,
   rehabLengthMonths: 0,
@@ -114,5 +115,37 @@ describe("calculateBuyHold", () => {
     expect(highLeverage.monthly[0].mortgage.payment).toBeGreaterThan(
       baseline.monthly[0].mortgage.payment,
     );
+  });
+
+  it("applies rent appreciation for inherited tenants and stabilized phases", () => {
+    const annualGrowth = 12;
+    const result = calculateBuyHold({
+      rent: {
+        ...baseRent,
+        modelCurrentVsFuture: true,
+        isOccupied: true,
+        currentMonthlyRent: 1000,
+        monthsUntilTenantLeaves: 2,
+        targetMonthlyRent: 1500,
+        annualRentGrowthPercent: annualGrowth,
+      },
+      loan: {
+        purchasePrice: 200000,
+        downPaymentPercent: 25,
+        interestRateAnnualPercent: 6,
+        termYears: 30,
+      },
+      operating: zeroOps,
+      arv: 200000,
+      purchasePrice: 200000,
+      annualAppreciationPercent: 0,
+      months: 6,
+      rehabTotal: 0,
+    });
+
+    const rents = result.monthly.map((m) => m.rent);
+    // Month 2 should reflect growth on the current tenant; month 4 keeps growing after stabilization.
+    expect(rents[1]).toBeGreaterThan(rents[0]);
+    expect(rents[3]).toBeGreaterThan(rents[2]);
   });
 });

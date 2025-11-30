@@ -65,6 +65,7 @@ const defaultState: FormState = {
   arv: undefined as unknown as number,
   asIsValue: undefined,
   targetMonthlyRent: 2750,
+  annualRentGrowthPercent: 0,
   annualAppreciationPercent: 3,
   monthsToSimulate: 60,
   modelCurrentVsFuture: true,
@@ -144,6 +145,7 @@ function AnalyzeContent() {
       currentMonthlyRent: form.currentMonthlyRent,
       monthsUntilTenantLeaves: form.monthsUntilTenantLeaves,
       targetMonthlyRent: form.targetMonthlyRent,
+      annualRentGrowthPercent: form.annualRentGrowthPercent,
       rehabPlanned: form.strategy === Strategy.FLIP ? true : form.rehabPlanned,
       rehabTiming: form.rehabTiming,
       rehabLengthMonths: form.rehabLengthMonths,
@@ -214,7 +216,8 @@ function AnalyzeContent() {
         currentMonthlyRent: form.currentMonthlyRent,
         monthsUntilTenantLeaves: form.monthsUntilTenantLeaves,
         targetMonthlyRent: form.targetMonthlyRent,
-      rehabPlanned: form.strategy === Strategy.FLIP ? true : form.rehabPlanned,
+        annualRentGrowthPercent: form.annualRentGrowthPercent,
+        rehabPlanned: form.strategy === Strategy.FLIP ? true : form.rehabPlanned,
         rehabTiming: form.rehabTiming,
         rehabLengthMonths: form.rehabLengthMonths,
         asIsValue: asIsFallback,
@@ -237,6 +240,7 @@ function AnalyzeContent() {
         currentMonthlyRent: form.currentMonthlyRent,
         monthsUntilTenantLeaves: form.monthsUntilTenantLeaves,
         targetMonthlyRent: form.targetMonthlyRent,
+        annualRentGrowthPercent: form.annualRentGrowthPercent,
         rehabPlanned: form.strategy === Strategy.FLIP ? true : form.rehabPlanned,
         rehabTiming: form.rehabTiming,
         rehabLengthMonths: form.rehabLengthMonths,
@@ -268,6 +272,7 @@ function AnalyzeContent() {
         currentMonthlyRent: form.currentMonthlyRent,
         monthsUntilTenantLeaves: form.monthsUntilTenantLeaves,
         targetMonthlyRent: form.targetMonthlyRent,
+        annualRentGrowthPercent: form.annualRentGrowthPercent,
         rehabPlanned: true,
         rehabTiming: form.rehabTiming,
         rehabLengthMonths: form.rehabLengthMonths,
@@ -301,6 +306,7 @@ function AnalyzeContent() {
         currentMonthlyRent: form.currentMonthlyRent,
         monthsUntilTenantLeaves: form.monthsUntilTenantLeaves,
         targetMonthlyRent: form.targetMonthlyRent,
+        annualRentGrowthPercent: form.annualRentGrowthPercent,
         rehabPlanned: form.rehabPlanned,
         rehabTiming: form.rehabTiming,
         rehabLengthMonths: form.rehabLengthMonths,
@@ -706,6 +712,14 @@ function AnalyzeContent() {
                 onChange={(v) => update("targetMonthlyRent", v)}
                 prefix="$"
                 tooltip="Stabilized rent once rehab/turnover is complete."
+              />
+              <Field
+                label="Annual rent growth %"
+                helper="Applies to current and stabilized rent (buy & hold / BRRRR)."
+                value={numberInputValue(form.annualRentGrowthPercent)}
+                onChange={(v) => update("annualRentGrowthPercent", v)}
+                suffix="%"
+                tooltip="Assumed annual rent appreciation; compounds monthly across phases."
               />
               <Field
                 label="Months to simulate"
