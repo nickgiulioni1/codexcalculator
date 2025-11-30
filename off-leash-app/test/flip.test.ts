@@ -97,4 +97,32 @@ describe("calculateFlip", () => {
     expect(result.taxOnProfit).toBe(0);
     expect(result.profitAfterTax).toBe(result.netProfit);
   });
+
+  it("includes full project cost even when rehab is not financed and ltv < 100%", () => {
+    const result = calculateFlip({
+      rent: { ...baseRent, isOccupied: false, monthsUntilTenantLeaves: 0 },
+      purchasePrice: 200000,
+      arv: 300000,
+      rehabTotal: 50000,
+      rehabMonths: 2,
+      holdMonths: 1,
+      bridge: {
+        interestRateAnnualPercent: 12,
+        pointsPercent: 1,
+        closingCostsPercent: 2,
+        ltvPercent: 80,
+        includeRehabInBridge: false,
+      },
+      sellingCostsPercent: 2,
+      agentFeePercent: 5,
+      taxesMonthly: 0,
+      insuranceMonthly: 0,
+    });
+
+    // Bridge finances 80% of purchase only (160k); rehab is paid in cash.
+    expect(result.saleMonth).toBe(3);
+    expect(result.totalCosts).toBeCloseTo(281400, 0);
+    expect(result.netProfit).toBeCloseTo(18600, 0);
+    expect(result.roi).toBeCloseTo(result.netProfit / result.totalCosts, 5);
+  });
 });

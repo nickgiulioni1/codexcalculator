@@ -134,6 +134,8 @@ function AnalyzeContent() {
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [totalSaved, setTotalSaved] = useState<number>(0);
   const [isNarrow, setIsNarrow] = useState<boolean>(false);
+  const [rehabShowEnabledOnly, setRehabShowEnabledOnly] = useState(false);
+  const [rehabDefaultOpen, setRehabDefaultOpen] = useState(true);
 
   const rentResult = useMemo(() => {
     const rentInputs: RentTimelineInputs = {
@@ -325,6 +327,22 @@ function AnalyzeContent() {
   }, [form, rehabResult.total]);
 
   const lastMonth = buyHoldResult.monthly[buyHoldResult.monthly.length - 1];
+  const validationAlerts = useMemo(() => {
+    const alerts: string[] = [];
+    if (form.strategy === Strategy.BRRRR && form.refinanceLtvPercent > 100) {
+      alerts.push("Refinance LTV exceeds 100% — cap to stay realistic.");
+    }
+    if ((form.strategy === Strategy.BRRRR || form.strategy === Strategy.FLIP) && form.bridgeRate <= 0) {
+      alerts.push("Bridge rate is zero/negative — set a positive rate for financing costs.");
+    }
+    if (form.rehabPlanned && form.rehabLengthMonths <= 0) {
+      alerts.push("Rehab length must be at least 1 month when rehab is enabled.");
+    }
+    if (form.monthsToSimulate < 1) {
+      alerts.push("Months to simulate must be at least 1.");
+    }
+    return alerts;
+  }, [form.bridgeRate, form.monthsToSimulate, form.rehabLengthMonths, form.rehabPlanned, form.refinanceLtvPercent, form.strategy]);
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -534,12 +552,21 @@ function AnalyzeContent() {
       <div className={styles.layout}>
         <div className={styles.leftColumn}>
           <div className={`${styles.formCard} card`}>
-          <div className={styles.section}>
-            <div className="section-title">
-              <h4>Scenario</h4>
-              <div className="pill-ghost">{scenarioId ? "Saved" : "Unsaved"}</div>
-            </div>
-            {shareMessage ? <div className="chip badge-accent">{shareMessage}</div> : null}
+            <div className={styles.section}>
+              <div className="section-title">
+                <h4>Scenario</h4>
+                <div className="pill-ghost">{scenarioId ? "Saved" : "Unsaved"}</div>
+              </div>
+              {validationAlerts.length ? (
+                <div className={styles.alertStack}>
+                  {validationAlerts.map((alert) => (
+                    <div key={alert} className="chip badge-accent">
+                      {alert}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              {shareMessage ? <div className="chip badge-accent">{shareMessage}</div> : null}
             <div className={styles.statusRow}>
               <div className="chip">
                 Sync: {syncStatus === "saving" ? "Saving..." : syncStatus === "offline" ? "Offline (local only)" : "Online"}
@@ -1027,6 +1054,16 @@ function AnalyzeContent() {
                 ))}
                 <ToggleButton label="Use presets" active={false} onClick={() => applyRehabPreset("defaults")} />
                 <ToggleButton label="Clear all" active={false} onClick={() => applyRehabPreset("clear")} />
+                <ToggleButton
+                  label={rehabShowEnabledOnly ? "Show all items" : "Show enabled only"}
+                  active={rehabShowEnabledOnly}
+                  onClick={() => setRehabShowEnabledOnly((v) => !v)}
+                />
+                <ToggleButton
+                  label={rehabDefaultOpen ? "Collapse all" : "Expand all"}
+                  active={rehabDefaultOpen}
+                  onClick={() => setRehabDefaultOpen((v) => !v)}
+                />
               </div>
               <div className="data-row" style={{ marginTop: 8 }}>
                 <div>
@@ -1041,6 +1078,13 @@ function AnalyzeContent() {
                   (category) => {
                     const items = rehabCatalog.filter((item) => item.category === category);
                     if (!items.length) return null;
+                    const filteredItems = rehabShowEnabledOnly
+                      ? items.filter((item) => {
+                          const selection = form.rehabSelections.find((s) => s.itemId === item.id);
+                          return selection?.enabled;
+                        })
+                      : items;
+                    if (!filteredItems.length) return null;
                     const enabledItems = items.filter((item) => {
                       const selection = form.rehabSelections.find((s) => s.itemId === item.id);
                       return selection?.enabled;
@@ -1049,7 +1093,7 @@ function AnalyzeContent() {
                       .filter((line) => line.item.category === category)
                       .reduce((sum, line) => sum + line.lineTotal, 0);
                     return (
-                      <details key={category} className={styles.categoryBlock} defaultOpen={!isNarrow}>
+                      <details key={`${category}-${rehabDefaultOpen}`} className={styles.categoryBlock} defaultOpen={!isNarrow && rehabDefaultOpen}>
                         <summary className={styles.categoryHeader}>
                           <div className={styles.categoryTitle}>{category}</div>
                           <div className={styles.buttonRow}>
@@ -1070,7 +1114,7 @@ function AnalyzeContent() {
                               </tr>
                             </thead>
                             <tbody>
-                              {items.map((item) => {
+                              {filteredItems.map((item) => {
                                 const selection =
                                   form.rehabSelections.find((s) => s.itemId === item.id) ??
                                   { itemId: item.id, quantity: item.defaultQuantity ?? 0, enabled: false };
@@ -1414,11 +1458,13 @@ function AnalyzeContent() {
                 <CashFlowChart
                   cash={(form.strategy === Strategy.BRRRR ? brrrResult.monthly : buyHoldResult.monthly).map((m) => m.cashFlow)}
                   cumulative={(form.strategy === Strategy.BRRRR ? brrrResult.monthly : buyHoldResult.monthly).map((m) => m.cumulativeCashFlow ?? 0)}
+                  months={(form.strategy === Strategy.BRRRR ? brrrResult.monthly : buyHoldResult.monthly).map((m) => m.month)}
                   formatter={(v) => currency.format(Math.round(v))}
                 />
                 <ValueEquityChart
                   value={(form.strategy === Strategy.BRRRR ? brrrResult.monthly : buyHoldResult.monthly).map((m) => m.propertyValue)}
                   equity={(form.strategy === Strategy.BRRRR ? brrrResult.monthly : buyHoldResult.monthly).map((m) => m.equity)}
+                  months={(form.strategy === Strategy.BRRRR ? brrrResult.monthly : buyHoldResult.monthly).map((m) => m.month)}
                   formatter={(v) => currency.format(Math.round(v))}
                 />
               </>
@@ -1982,14 +2028,16 @@ function BarCompare({
 type CashFlowChartProps = {
   cash: number[];
   cumulative: number[];
+  months?: number[];
   formatter?: (value: number) => string;
 };
 
-function CashFlowChart({ cash, cumulative, formatter }: CashFlowChartProps) {
+function CashFlowChart({ cash, cumulative, months, formatter }: CashFlowChartProps) {
   const windowSize = 18;
   const start = Math.max(cash.length - windowSize, 0);
   const cashSlice = cash.slice(start);
   const cumulativeSlice = cumulative.slice(start);
+  const monthsSlice = months?.slice(start);
   const merged = [...cashSlice, ...cumulativeSlice];
   const min = Math.min(...merged, 0);
   const max = Math.max(...merged, 0);
@@ -2055,6 +2103,17 @@ function CashFlowChart({ cash, cumulative, formatter }: CashFlowChartProps) {
           strokeWidth={0.8}
           strokeDasharray="4 4"
         />
+        {monthsSlice && monthsSlice.length ? (
+          <>
+            <text x="0" y="99" fontSize="6" fill="#777">{monthsSlice[0]}</text>
+            <text x="50" y="99" fontSize="6" fill="#777" textAnchor="middle">
+              {monthsSlice[Math.floor(monthsSlice.length / 2)]}
+            </text>
+            <text x="100" y="99" fontSize="6" fill="#777" textAnchor="end">
+              {monthsSlice[monthsSlice.length - 1]}
+            </text>
+          </>
+        ) : null}
       </svg>
     </div>
   );
@@ -2063,10 +2122,11 @@ function CashFlowChart({ cash, cumulative, formatter }: CashFlowChartProps) {
 type ValueEquityChartProps = {
   value: number[];
   equity: number[];
+  months?: number[];
   formatter?: (value: number) => string;
 };
 
-function ValueEquityChart({ value, equity, formatter }: ValueEquityChartProps) {
+function ValueEquityChart({ value, equity, months, formatter }: ValueEquityChartProps) {
   const merged = [...value, ...equity];
   const min = Math.min(...merged);
   const max = Math.max(...merged);
@@ -2114,6 +2174,17 @@ function ValueEquityChart({ value, equity, formatter }: ValueEquityChartProps) {
           strokeLinecap="round"
           points={equityPoints}
         />
+        {months && months.length ? (
+          <>
+            <text x="0" y="99" fontSize="6" fill="#777">{months[0]}</text>
+            <text x="50" y="99" fontSize="6" fill="#777" textAnchor="middle">
+              {months[Math.floor(months.length / 2)]}
+            </text>
+            <text x="100" y="99" fontSize="6" fill="#777" textAnchor="end">
+              {months[months.length - 1]}
+            </text>
+          </>
+        ) : null}
       </svg>
     </div>
   );
@@ -2133,43 +2204,49 @@ type WaterfallProps = {
 
 function Waterfall({ label, items, salePrice, formatter }: WaterfallProps) {
   const totalCosts = items.reduce((sum, i) => sum + i.value, 0);
-  const max = Math.max(totalCosts, salePrice, 1);
+  const profit = salePrice - totalCosts;
+  const max = Math.max(salePrice, totalCosts, 1);
+  let running = salePrice;
+
   return (
     <div className={styles.chartCard}>
       <div className={styles.chartHeader}>
         <div className={styles.kpiLabel}>{label}</div>
         <div className="chip badge-accent">
-          Net profit {formatter ? formatter(salePrice - totalCosts) : (salePrice - totalCosts).toFixed(0)}
+          Net profit {formatter ? formatter(profit) : profit.toFixed(0)}
         </div>
       </div>
-      <div className={styles.stackBar}>
-        {items.map((item, idx) => {
-          const width = Math.max((item.value / max) * 100, 2);
-          return (
-            <div
-              key={item.label}
-              className={styles.stackSegment}
-              style={{ width: `${width}%`, background: `linear-gradient(135deg, #ffe8ed, #ffd6e0)` }}
-              title={`${item.label}: ${formatter ? formatter(item.value) : item.value}`}
-            >
-              <span className={styles.stackLabel}>{item.label}</span>
-            </div>
-          );
-        })}
-      </div>
-      <div className={styles.barRow}>
-        <div className={styles.barLabel}>Total costs</div>
-        <div className={styles.barTrack}>
-          <div className={styles.barFill} style={{ width: `${Math.max((totalCosts / max) * 100, 4)}%` }} />
-        </div>
-        <div className={styles.barValue}>{formatter ? formatter(totalCosts) : totalCosts.toFixed(0)}</div>
-      </div>
-      <div className={styles.barRow}>
+      <div className={styles.waterfallRow}>
         <div className={styles.barLabel}>Sale price</div>
         <div className={styles.barTrack}>
-          <div className={`${styles.barFill} ${styles.barFillAlt}`} style={{ width: `${Math.max((salePrice / max) * 100, 4)}%` }} />
+          <div className={`${styles.barFill} ${styles.barFillAlt}`} style={{ width: "100%" }} />
         </div>
         <div className={styles.barValue}>{formatter ? formatter(salePrice) : salePrice.toFixed(0)}</div>
+      </div>
+      {items.map((item) => {
+        const costWidth = Math.max((item.value / max) * 100, 2);
+        running -= item.value;
+        const remainderWidth = Math.max((running / max) * 100, 2);
+        return (
+          <div key={item.label} className={styles.waterfallRow}>
+            <div className={styles.barLabel}>{item.label}</div>
+            <div className={styles.waterfallTrack}>
+              <div className={styles.costFill} style={{ width: `${costWidth}%` }} />
+              <div className={styles.remainderFill} style={{ width: `${remainderWidth}%` }} />
+            </div>
+            <div className={styles.barValue}>
+              -{formatter ? formatter(item.value) : item.value.toFixed(0)} →{" "}
+              {formatter ? formatter(running) : running.toFixed(0)}
+            </div>
+          </div>
+        );
+      })}
+      <div className={styles.waterfallRow}>
+        <div className={styles.barLabel}>Profit</div>
+        <div className={styles.barTrack}>
+          <div className={`${styles.barFill} ${styles.barFillAlt}`} style={{ width: `${Math.max((profit / max) * 100, 2)}%` }} />
+        </div>
+        <div className={styles.barValue}>{formatter ? formatter(profit) : profit.toFixed(0)}</div>
       </div>
     </div>
   );

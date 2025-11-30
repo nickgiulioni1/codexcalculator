@@ -290,6 +290,37 @@
   font-size: 13px;
 }
 
+.waterfallRow {
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.waterfallTrack {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.costFill {
+  height: 10px;
+  background: #ffe0e8;
+  border-radius: 999px;
+}
+
+.remainderFill {
+  height: 10px;
+  background: #c2f2d4;
+  border-radius: 999px;
+}
+
+.alertStack {
+  display: grid;
+  gap: 6px;
+}
+
 .stackBar {
   display: flex;
   gap: 6px;

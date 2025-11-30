@@ -32,7 +32,10 @@ export function calculateFlip(inputs: FlipInputs): FlipResult {
   const agentFee = inputs.arv * pct(inputs.agentFeePercent);
   const sellingCosts = inputs.arv * pct(inputs.sellingCostsPercent);
 
-  const totalCosts = bridgePrincipal + points + closing + interest + carrying + agentFee + sellingCosts;
+  // Total project cost should reflect the full spend (purchase + rehab),
+  // regardless of how much is financed, plus all financing and selling costs.
+  const projectCost = inputs.purchasePrice + inputs.rehabTotal;
+  const totalCosts = projectCost + points + closing + interest + carrying + agentFee + sellingCosts;
   const netProfit = inputs.arv - totalCosts;
   const roi = totalCosts ? netProfit / totalCosts : 0;
   const taxRate = pct(inputs.marginalTaxRatePercent ?? 0);

@@ -19,8 +19,10 @@ export function calculateBRRRR(inputs: BRRRRInputs): BRRRRResult {
     otherMonthlyExpenses: 0,
   };
 
-  const bridgeBase = inputs.purchasePrice + (inputs.bridge.includeRehabInBridge ?? true ? inputs.rehabTotal : 0);
+  const rehabInBridge = inputs.bridge.includeRehabInBridge ?? true;
+  const bridgeBase = inputs.purchasePrice + (rehabInBridge ? inputs.rehabTotal : 0);
   const bridgePrincipal = bridgeBase * (inputs.bridge.ltvPercent ?? 100) / 100;
+  const equityGap = Math.max(bridgeBase - bridgePrincipal, 0);
   const bridgePoints = (inputs.bridge.pointsPercent ?? 0) * bridgePrincipal / 100;
   const bridgeClosing = (inputs.bridge.closingCostsPercent ?? 0) * inputs.purchasePrice / 100;
   const monthlyBridgeRate = pct(inputs.bridge.interestRateAnnualPercent) / 12;
@@ -145,9 +147,10 @@ export function calculateBRRRR(inputs: BRRRRInputs): BRRRRResult {
     });
   }
 
-  const cashRequired = bridgeClosing + bridgePoints + inputs.rehabTotal;
-  const totalCashRequired = cashRequired + bridgeInterest + carryingCosts;
-  const coc = cashRequired ? cumulativeCashFlowPostRefi / cashRequired : 0;
+  const rehabCash = rehabInBridge ? 0 : inputs.rehabTotal;
+  const cashRequiredBase = equityGap + bridgeClosing + bridgePoints + rehabCash;
+  const totalCashRequired = cashRequiredBase + bridgeInterest + carryingCosts;
+  const coc = totalCashRequired ? cumulativeCashFlowPostRefi / totalCashRequired : 0;
 
   return {
     monthly,
@@ -155,10 +158,10 @@ export function calculateBRRRR(inputs: BRRRRInputs): BRRRRResult {
     metrics: {
       cashRequired: totalCashRequired,
       cashRequiredBreakdown: {
-        downPayment: 0,
+        downPayment: equityGap,
         closingCosts: bridgeClosing,
         lenderPoints: bridgePoints,
-        rehab: inputs.rehabTotal,
+        rehab: rehabCash,
         carrying: carryingCosts + bridgeInterest,
       },
       totalReturn: (monthly[monthly.length - 1]?.equity ?? 0) + (monthly[monthly.length - 1]?.cumulativeCashFlow ?? 0),
