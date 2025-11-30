@@ -330,7 +330,7 @@ function AnalyzeContent() {
       insuranceMonthly: form.operating.insuranceAnnual / 12,
       marginalTaxRatePercent: form.marginalTaxRatePercent,
     });
-  }, [form, rehabResult.total]);
+  }, [form, rehabResult.total, asIsFallback, arvFallback]);
 
   const lastMonth = buyHoldResult.monthly[buyHoldResult.monthly.length - 1];
   const validationAlerts = useMemo(() => {
@@ -1996,49 +1996,6 @@ function SparkLine({ label, data, color = "#ff385c", formatter }: SparkLineProps
   );
 }
 
-type BarCompareProps = {
-  label: string;
-  leftLabel: string;
-  leftValue: number;
-  rightLabel: string;
-  rightValue: number;
-  formatter?: (value: number) => string;
-};
-
-function BarCompare({
-  label,
-  leftLabel,
-  leftValue,
-  rightLabel,
-  rightValue,
-  formatter,
-}: BarCompareProps) {
-  const max = Math.max(leftValue, rightValue, 1);
-  const leftPct = Math.max((leftValue / max) * 100, 2);
-  const rightPct = Math.max((rightValue / max) * 100, 2);
-  return (
-    <div className={styles.barCard}>
-      <div className={styles.sparkHeader}>
-        <span className={styles.kpiLabel}>{label}</span>
-      </div>
-      <div className={styles.barRow}>
-        <div className={styles.barLabel}>{leftLabel}</div>
-        <div className={styles.barTrack}>
-          <div className={styles.barFill} style={{ width: `${leftPct}%` }} />
-        </div>
-        <div className={styles.barValue}>{formatter ? formatter(leftValue) : leftValue.toFixed(0)}</div>
-      </div>
-      <div className={styles.barRow}>
-        <div className={styles.barLabel}>{rightLabel}</div>
-        <div className={styles.barTrack}>
-          <div className={`${styles.barFill} ${styles.barFillAlt}`} style={{ width: `${rightPct}%` }} />
-        </div>
-        <div className={styles.barValue}>{formatter ? formatter(rightValue) : rightValue.toFixed(0)}</div>
-      </div>
-    </div>
-  );
-}
-
 type CashFlowChartProps = {
   cash: number[];
   cumulative: number[];
@@ -2220,7 +2177,6 @@ function Waterfall({ label, items, salePrice, formatter }: WaterfallProps) {
   const totalCosts = items.reduce((sum, i) => sum + i.value, 0);
   const profit = salePrice - totalCosts;
   const max = Math.max(salePrice, totalCosts, 1);
-  let running = salePrice;
 
   return (
     <div className={styles.chartCard}>
@@ -2237,10 +2193,11 @@ function Waterfall({ label, items, salePrice, formatter }: WaterfallProps) {
         </div>
         <div className={styles.barValue}>{formatter ? formatter(salePrice) : salePrice.toFixed(0)}</div>
       </div>
-      {items.map((item) => {
+      {items.map((item, idx) => {
         const costWidth = Math.max((item.value / max) * 100, 2);
-        running -= item.value;
-        const remainderWidth = Math.max((running / max) * 100, 2);
+        const spentSoFar = items.slice(0, idx + 1).reduce((sum, i) => sum + i.value, 0);
+        const remainder = salePrice - spentSoFar;
+        const remainderWidth = Math.max((remainder / max) * 100, 2);
         return (
           <div key={item.label} className={styles.waterfallRow}>
             <div className={styles.barLabel}>{item.label}</div>
@@ -2250,7 +2207,7 @@ function Waterfall({ label, items, salePrice, formatter }: WaterfallProps) {
             </div>
             <div className={styles.barValue}>
               -{formatter ? formatter(item.value) : item.value.toFixed(0)} →{" "}
-              {formatter ? formatter(running) : running.toFixed(0)}
+              {formatter ? formatter(remainder) : remainder.toFixed(0)}
             </div>
           </div>
         );
