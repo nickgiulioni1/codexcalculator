@@ -12,6 +12,8 @@ export type FlipDetailedResult = {
   carrying: number;
   agentFee: number;
   sellingCosts: number;
+  projectCost: number;
+  equityRequired: number;
   totalCosts: number;
   netProfit: number;
   roi: number;
@@ -53,7 +55,9 @@ export function calculateFlipDetailed(inputs: FlipInputs): FlipDetailedResult {
   const agentFee = inputs.arv * pct(inputs.agentFeePercent);
   const sellingCosts = inputs.arv * pct(inputs.sellingCostsPercent);
 
-  const totalCosts = bridgePrincipal + points + closing + interest + carrying + agentFee + sellingCosts;
+  const projectCost = inputs.purchasePrice + inputs.rehabTotal;
+  const equityRequired = Math.max(projectCost - bridgePrincipal, 0);
+  const totalCosts = projectCost + points + closing + interest + carrying + agentFee + sellingCosts;
   const netProfit = inputs.arv - totalCosts;
   const roi = totalCosts ? netProfit / totalCosts : 0;
   const taxRate = pct(inputs.marginalTaxRatePercent ?? 0);
@@ -70,6 +74,8 @@ export function calculateFlipDetailed(inputs: FlipInputs): FlipDetailedResult {
     carrying,
     agentFee,
     sellingCosts,
+    projectCost,
+    equityRequired,
     totalCosts,
     netProfit,
     roi,
