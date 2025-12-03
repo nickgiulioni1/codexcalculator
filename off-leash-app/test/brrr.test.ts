@@ -68,7 +68,8 @@ describe("calculateBRRRR", () => {
       (breakdown.closingCosts ?? 0) +
       (breakdown.lenderPoints ?? 0) +
       (breakdown.rehab ?? 0) +
-      (breakdown.carrying ?? 0);
+      (breakdown.carrying ?? 0) +
+      (breakdown.refinanceCosts ?? 0);
     expect(result.metrics.cashRequired).toBeCloseTo(reconstructed, 2);
     // Base scenario finances rehab in the bridge, so rehab cash should be zero.
     expect(result.metrics.cashRequiredBreakdown.rehab).toBe(0);
@@ -116,8 +117,8 @@ describe("calculateBRRRR", () => {
     // Bridge finances 80% of purchase + rehab => principal 200k, equity gap 50k.
     expect(ltv80.metrics.cashRequiredBreakdown.downPayment).toBeCloseTo(50000, 0);
     expect(ltv80.metrics.cashRequiredBreakdown.rehab).toBe(0);
-    // Interest for two months before refi (rehab length 2) at 1% monthly on 200k plus carrying.
-    expect(ltv80.metrics.cashRequired).toBeCloseTo(55000, 0);
+    // Interest accrues on growing draws (2 months, 3.8k total) plus base carrying.
+    expect(ltv80.metrics.cashRequired).toBeCloseTo(54800, 0);
   });
 
   it("treats rehab as cash when not included in bridge base", () => {

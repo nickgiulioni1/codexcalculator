@@ -67,6 +67,10 @@ describe("calculateFlip", () => {
     expect(result.totalCosts).toBeGreaterThan(0);
     // Allow negative profit in unfavorable scenarios, but ROI math should match.
     expect(result.roi).toBeCloseTo(result.netProfit / result.totalCosts, 5);
+    expect(result.cashOnCashRoi).toBeCloseTo(
+      result.cashInvested ? result.netProfit / result.cashInvested : 0,
+      5,
+    );
     expect(result.taxOnProfit).toBeGreaterThanOrEqual(0);
     expect(result.roiAfterTax).toBeCloseTo(result.profitAfterTax / result.totalCosts, 5);
     // Profit after tax should reflect marginal rate on positive profit
@@ -120,10 +124,15 @@ describe("calculateFlip", () => {
       insuranceMonthly: 0,
     });
 
-    // Bridge finances 80% of purchase only (160k); rehab is paid in cash.
+    // Bridge finances 80% of purchase only (160k); rehab is paid in cash and rent offsets carry in month 3.
     expect(result.saleMonth).toBe(3);
-    expect(result.totalCosts).toBeCloseTo(281400, 0);
-    expect(result.netProfit).toBeCloseTo(18600, 0);
+    expect(result.bridgeInterest).toBeCloseTo(4800, 0);
+    expect(result.carryingCosts).toBeLessThan(0); // stabilized rent offsets taxes/insurance
+    expect(result.equityRequired).toBeCloseTo(90000, 0);
     expect(result.roi).toBeCloseTo(result.netProfit / result.totalCosts, 5);
+    expect(result.cashOnCashRoi).toBeCloseTo(
+      result.cashInvested ? result.netProfit / result.cashInvested : 0,
+      5,
+    );
   });
 });

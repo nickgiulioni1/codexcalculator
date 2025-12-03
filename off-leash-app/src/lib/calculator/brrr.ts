@@ -20,9 +20,11 @@ export function calculateBRRRR(inputs: BRRRRInputs): BRRRRResult {
   };
 
   const rehabInBridge = inputs.bridge.includeRehabInBridge ?? true;
-  const bridgeBase = inputs.purchasePrice + (rehabInBridge ? inputs.rehabTotal : 0);
-  const bridgePrincipal = bridgeBase * (inputs.bridge.ltvPercent ?? 100) / 100;
-  const equityGap = Math.max(bridgeBase - bridgePrincipal, 0);
+  const ltv = pct(inputs.bridge.ltvPercent ?? 100);
+  const financedPurchase = inputs.purchasePrice * ltv;
+  const financedRehab = rehabInBridge ? inputs.rehabTotal * ltv : 0;
+  const bridgePrincipal = financedPurchase + financedRehab;
+  const equityGap = Math.max(inputs.purchasePrice + (rehabInBridge ? inputs.rehabTotal : 0) - bridgePrincipal, 0);
   const bridgePoints = (inputs.bridge.pointsPercent ?? 0) * bridgePrincipal / 100;
   const bridgeClosing = (inputs.bridge.closingCostsPercent ?? 0) * inputs.purchasePrice / 100;
   const monthlyBridgeRate = pct(inputs.bridge.interestRateAnnualPercent) / 12;
@@ -38,8 +40,26 @@ export function calculateBRRRR(inputs: BRRRRInputs): BRRRRResult {
   );
 
   let bridgeInterest = 0;
+  let bridgeBalance = financedPurchase;
+  const rehabDuration = inputs.rent.rehabPlanned
+    ? Math.max(phases.rehabEndMonth - phases.rehabStartMonth + 1, 0)
+    : 0;
+  const monthlyRehabDraw = rehabDuration > 0 ? financedRehab / rehabDuration : financedRehab;
+
+  const bridgeBalances: number[] = [];
+
   for (let m = 1; m < refinanceMonth; m++) {
-    bridgeInterest += bridgePrincipal * monthlyBridgeRate;
+    if (
+      rehabInBridge &&
+      rehabDuration > 0 &&
+      m >= phases.rehabStartMonth &&
+      m <= phases.rehabEndMonth
+    ) {
+      bridgeBalance += monthlyRehabDraw;
+    }
+
+    bridgeBalances[m] = bridgeBalance;
+    bridgeInterest += bridgeBalance * monthlyBridgeRate;
   }
   const monthlyCarry =
     op.taxesAnnual / 12 +
@@ -50,15 +70,24 @@ export function calculateBRRRR(inputs: BRRRRInputs): BRRRRResult {
 
   const valueAtRefi = propertyValues.values.find((v) => v.month === refinanceMonth)?.value ?? inputs.arv;
   const refinanceAmount = valueAtRefi * pct(inputs.refinanceLtvPercent);
-  const payoffBridge = bridgePrincipal + bridgeInterest;
-  const cashOut = Math.max(refinanceAmount - payoffBridge, 0);
-
-  const longTermLoanAmount = refinanceAmount;
-  const amort = buildAmortization({
-    principal: longTermLoanAmount,
+  const refinanceClosingCosts = (inputs.refinanceClosingCostsPercent ?? inputs.longTermLoan.closingCostsPercent ?? 0) * refinanceAmount / 100;
+  const refinancePoints = (inputs.refinancePointsPercent ?? inputs.longTermLoan.lenderPointsPercent ?? 0) * refinanceAmount / 100;
+  const amortPreview = buildAmortization({
+    principal: refinanceAmount,
     annualRatePercent: inputs.longTermLoan.interestRateAnnualPercent,
     termMonths: inputs.longTermLoan.termYears * 12,
   });
+  const reserveMonths = inputs.refinanceReserveMonths ?? 0;
+  const refinanceReserves = reserveMonths
+    ? reserveMonths *
+      (amortPreview.payment + op.taxesAnnual / 12 + op.insuranceAnnual / 12 + (op.utilitiesMonthly ?? 0) + (op.otherMonthlyExpenses ?? 0))
+    : 0;
+  const refinanceCosts = refinanceClosingCosts + refinancePoints + refinanceReserves;
+  const payoffBridge = bridgeBalance + bridgeInterest;
+  const cashOut = Math.max(refinanceAmount - payoffBridge - refinanceCosts, 0);
+
+  const longTermLoanAmount = refinanceAmount;
+  const amort = amortPreview;
 
   const monthly: BRRRRResult["monthly"] = [];
   let cumulativeCashFlow = 0;
@@ -82,10 +111,10 @@ export function calculateBRRRR(inputs: BRRRRInputs): BRRRRResult {
         ? amort.schedule[Math.min(month - refinanceMonth, amort.schedule.length - 1)]
         : {
             month,
-            payment: bridgePrincipal * monthlyBridgeRate,
+            payment: (bridgeBalances[month] ?? bridgeBalance) * monthlyBridgeRate,
             principal: 0,
-            interest: bridgePrincipal * monthlyBridgeRate,
-            balance: bridgePrincipal,
+            interest: (bridgeBalances[month] ?? bridgeBalance) * monthlyBridgeRate,
+            balance: bridgeBalances[month] ?? bridgeBalance,
           };
 
     const expensesSum =
@@ -149,7 +178,7 @@ export function calculateBRRRR(inputs: BRRRRInputs): BRRRRResult {
 
   const rehabCash = rehabInBridge ? 0 : inputs.rehabTotal;
   const cashRequiredBase = equityGap + bridgeClosing + bridgePoints + rehabCash;
-  const totalCashRequired = cashRequiredBase + bridgeInterest + carryingCosts;
+  const totalCashRequired = cashRequiredBase + bridgeInterest + carryingCosts + refinanceCosts;
   const coc = totalCashRequired ? cumulativeCashFlowPostRefi / totalCashRequired : 0;
 
   return {
@@ -163,6 +192,7 @@ export function calculateBRRRR(inputs: BRRRRInputs): BRRRRResult {
         lenderPoints: bridgePoints,
         rehab: rehabCash,
         carrying: carryingCosts + bridgeInterest,
+        refinanceCosts,
       },
       totalReturn: (monthly[monthly.length - 1]?.equity ?? 0) + (monthly[monthly.length - 1]?.cumulativeCashFlow ?? 0),
       dscr: annual[0]?.dscr,
@@ -175,5 +205,8 @@ export function calculateBRRRR(inputs: BRRRRInputs): BRRRRResult {
     refinanceAmount,
     payoffBridge,
     carryingCosts: carryingCosts + bridgeInterest,
+    refinanceClosingCosts,
+    refinancePoints,
+    refinanceReserves,
   };
 }
