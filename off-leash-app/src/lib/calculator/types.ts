@@ -152,6 +152,9 @@ export type BRRRRInputs = {
     includeRehabInBridge?: boolean;
   };
   refinanceLtvPercent: number;
+  refinanceClosingCostsPercent?: number;
+  refinancePointsPercent?: number;
+  refinanceReserveMonths?: number;
   purchasePrice: number;
   arv: number;
   rehabTotal: number;
@@ -167,6 +170,9 @@ export type BRRRRResult = BuyHoldOutputs & {
   refinanceAmount: number;
   payoffBridge: number;
   carryingCosts: number;
+  refinanceClosingCosts: number;
+  refinancePoints: number;
+  refinanceReserves: number;
 };
 
 export type FlipInputs = {
@@ -187,6 +193,7 @@ export type FlipInputs = {
   agentFeePercent: number;
   taxesMonthly: number;
   insuranceMonthly: number;
+  operating?: Partial<OperatingInputs>;
   /** Marginal tax rate applied to flip profit (if positive). */
   marginalTaxRatePercent?: number;
 };
@@ -194,9 +201,14 @@ export type FlipInputs = {
 export type FlipResult = {
   saleMonth: number;
   salePrice: number;
+  bridgeInterest: number;
+  carryingCosts: number;
+  equityRequired: number;
+  cashInvested: number;
   totalCosts: number;
   netProfit: number;
   roi: number;
+  cashOnCashRoi: number;
   profitAfterTax: number;
   taxOnProfit: number;
   roiAfterTax: number;
