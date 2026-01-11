@@ -1,0 +1,76 @@
+.card {
+  background: var(--surface-primary, white);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.card.success {
+  border-color: #84e1bc;
+  background: linear-gradient(135deg, #def7ec 0%, #ffffff 100%);
+}
+
+.card.warning {
+  border-color: #fcd34d;
+  background: linear-gradient(135deg, #fef3c7 0%, #ffffff 100%);
+}
+
+.card.danger {
+  border-color: #f8b4b4;
+  background: linear-gradient(135deg, #fde8e8 0%, #ffffff 100%);
+}
+
+.title {
+  margin: 0 0 12px 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary, #666);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 16px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metric.highlight {
+  padding: 8px;
+  background: var(--surface-secondary, #f8f9fa);
+  border-radius: 8px;
+}
+
+.label {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #666);
+}
+
+.value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a1a);
+}
+
+.subValue {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #666);
+}
+
+.success .value {
+  color: #03543f;
+}
+
+.warning .value {
+  color: #92400e;
+}
+
+.danger .value {
+  color: #9b1c1c;
+}

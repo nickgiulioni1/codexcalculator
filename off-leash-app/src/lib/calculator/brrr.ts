@@ -86,7 +86,6 @@ export function calculateBRRRR(inputs: BRRRRInputs): BRRRRResult {
   const payoffBridge = bridgeBalance + bridgeInterest;
   const cashOut = Math.max(refinanceAmount - payoffBridge - refinanceCosts, 0);
 
-  const longTermLoanAmount = refinanceAmount;
   const amort = amortPreview;
 
   const monthly: BRRRRResult["monthly"] = [];

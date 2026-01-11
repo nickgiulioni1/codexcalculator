@@ -1,3 +1,10 @@
+/**
+ * @module buyHold
+ * Buy & Hold investment strategy calculator.
+ * Generates monthly cash flows, annual summaries, and key metrics
+ * for long-term rental property investments.
+ */
+
 import {
   buildAmortization,
   buildPropertyValueSchedule,
@@ -10,8 +17,62 @@ import type {
   MonthlyResult,
 } from "./types";
 
+/**
+ * Converts a percentage to a decimal.
+ * @param value - Percentage value (e.g., 25 for 25%)
+ * @returns Decimal value (e.g., 0.25)
+ */
 const pct = (value: number) => value / 100;
 
+/**
+ * Calculates comprehensive Buy & Hold investment analysis.
+ *
+ * This function performs a complete rental property analysis including:
+ * - Cash required calculation (down payment, closing costs, points, rehab)
+ * - Monthly cash flow projections with phase-aware rent scheduling
+ * - Property appreciation and equity building
+ * - Annual summaries with key performance metrics (DSCR, Cap Rate, CoC)
+ *
+ * @param inputs - Complete input parameters for the analysis
+ * @returns Object containing monthly results, annual summaries, and key metrics
+ *
+ * @example
+ * const result = calculateBuyHold({
+ *   rent: {
+ *     modelCurrentVsFuture: false,
+ *     isOccupied: false,
+ *     currentMonthlyRent: 0,
+ *     monthsUntilTenantLeaves: 0,
+ *     targetMonthlyRent: 2500,
+ *     rehabPlanned: false,
+ *     rehabTiming: "IMMEDIATE",
+ *     rehabLengthMonths: 0,
+ *   },
+ *   loan: {
+ *     purchasePrice: 300000,
+ *     downPaymentPercent: 25,
+ *     interestRateAnnualPercent: 6.5,
+ *     termYears: 30,
+ *     closingCostsPercent: 2.5,
+ *     lenderPointsPercent: 1,
+ *   },
+ *   operating: {
+ *     taxesAnnual: 4000,
+ *     insuranceAnnual: 1200,
+ *     repairsPercent: 5,
+ *     capexPercent: 5,
+ *     managementPercent: 10,
+ *     vacancyPercent: 5,
+ *   },
+ *   arv: 300000,
+ *   purchasePrice: 300000,
+ *   annualAppreciationPercent: 3,
+ *   months: 60,
+ * });
+ *
+ * console.log(result.metrics.cashRequired); // Total cash needed
+ * console.log(result.annual[0].cashOnCash); // Year 1 CoC return
+ */
 export function calculateBuyHold(inputs: BuyHoldInputs): BuyHoldOutputs {
   const loanAmount =
     inputs.purchasePrice * (1 - pct(inputs.loan.downPaymentPercent));

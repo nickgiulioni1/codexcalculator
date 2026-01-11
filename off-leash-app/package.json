@@ -11,14 +11,19 @@
     "format": "prettier --check .",
     "format:write": "prettier --write .",
     "test": "vitest run",
-    "test:watch": "vitest watch"
+    "test:watch": "vitest watch",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
     "next": "16.0.4",
     "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "react-dom": "19.2.0",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@types/node": "^20.19.25",
     "@types/react": "^19",
     "@types/react-dom": "^19",
