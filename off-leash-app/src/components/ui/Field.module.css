@@ -1,0 +1,87 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary, #1a1a1a);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tooltip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  font-size: 0.625rem;
+  background: var(--surface-secondary, #f0f0f0);
+  border-radius: 50%;
+  cursor: help;
+  color: var(--text-secondary, #666);
+  user-select: none;
+}
+
+.tooltip:hover {
+  background: var(--accent-color, #4a6cf7);
+  color: white;
+}
+
+.inputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input {
+  width: 100%;
+}
+
+.input.hasPrefix {
+  padding-left: 28px;
+}
+
+.input.hasSuffix {
+  padding-right: 28px;
+}
+
+.prefix,
+.suffix {
+  position: absolute;
+  font-size: 0.875rem;
+  color: var(--text-secondary, #666);
+  pointer-events: none;
+}
+
+.prefix {
+  left: 10px;
+}
+
+.suffix {
+  right: 10px;
+}
+
+.helper {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #666);
+  margin: 0;
+}
+
+.error {
+  font-size: 0.75rem;
+  color: var(--error-color, #dc3545);
+  margin: 0;
+}
+
+.hasError .input {
+  border-color: var(--error-color, #dc3545);
+}
+
+.hasError .label {
+  color: var(--error-color, #dc3545);
+}

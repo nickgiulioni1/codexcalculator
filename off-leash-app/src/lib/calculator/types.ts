@@ -116,6 +116,7 @@ export type BuyHoldMetrics = {
     lenderPoints: number;
     rehab?: number;
     carrying?: number;
+    refinanceCosts?: number;
   };
   totalReturn: number;
   irr?: number;

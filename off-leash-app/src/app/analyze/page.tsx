@@ -1107,7 +1107,7 @@ function AnalyzeContent() {
                       .filter((line) => line.item.category === category)
                       .reduce((sum, line) => sum + line.lineTotal, 0);
                     return (
-                      <details key={`${category}-${rehabDefaultOpen}`} className={styles.categoryBlock} defaultOpen={!isNarrow && rehabDefaultOpen}>
+                      <details key={`${category}-${rehabDefaultOpen}`} className={styles.categoryBlock} open={!isNarrow && rehabDefaultOpen}>
                         <summary className={styles.categoryHeader}>
                           <div className={styles.categoryTitle}>{category}</div>
                           <div className={styles.buttonRow}>
